@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $script:ProjectRoot = Split-Path -Parent $PSScriptRoot
 $script:XpacksRoot = Join-Path $ProjectRoot "xpacks"
+$script:JLinkSpeedKhz = 100
 
 function Find-XpackExecutable {
     param(
@@ -80,7 +81,8 @@ function Invoke-JLinkCommandFile {
     try {
         Set-Content -LiteralPath $commandFile -Value $Commands -Encoding ASCII
         $output = & $jlink -NoGui 1 -ExitOnError 1 -Device NRF52840_XXAA `
-            -If SWD -Speed 1000 -AutoConnect 1 -CommandFile $commandFile 2>&1
+            -If SWD -Speed $JLinkSpeedKhz -AutoConnect 1 `
+            -CommandFile $commandFile 2>&1
         $exitCode = $LASTEXITCODE
         $output | Out-Host
         return $exitCode

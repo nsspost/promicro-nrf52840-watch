@@ -2,5 +2,6 @@ build/
 backups/
 node_modules/
 xpacks/
+tools/statesmith/
 external/
 .vscode/.cortex-debug.peripherals.state.json
