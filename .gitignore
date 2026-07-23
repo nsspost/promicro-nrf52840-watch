@@ -1,0 +1,6 @@
+build/
+backups/
+node_modules/
+xpacks/
+external/
+.vscode/.cortex-debug.peripherals.state.json

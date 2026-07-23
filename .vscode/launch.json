@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "nRF52840: attach via OpenOCD",
+      "type": "cortex-debug",
+      "request": "attach",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/watch_firmware.elf",
+      "servertype": "external",
+      "gdbTarget": "localhost:2331",
+      "device": "nRF52840_xxAA",
+      "runToEntryPoint": "main"
+    }
+  ]
+}

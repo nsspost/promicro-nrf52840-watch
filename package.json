@@ -1,0 +1,41 @@
+{
+  "name": "promicro-nrf52840-watch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bare-metal watch firmware and debug tools for a ProMicro nRF52840",
+  "xpack": {
+    "minimumXpmRequired": "0.20.0",
+    "devDependencies": {
+      "@xpack-dev-tools/arm-none-eabi-gcc": {
+        "specifier": "15.2.1-1.1.1",
+        "local": "link",
+        "platforms": "all"
+      },
+      "@xpack-dev-tools/openocd": {
+        "specifier": "0.12.0-7.1",
+        "local": "link",
+        "platforms": "all"
+      },
+      "@xpack-dev-tools/cmake": {
+        "specifier": "3.31.9-1.1",
+        "local": "link",
+        "platforms": "all"
+      },
+      "@xpack-dev-tools/ninja-build": {
+        "specifier": "1.13.1-1.1",
+        "local": "link",
+        "platforms": "all"
+      }
+    }
+  },
+  "scripts": {
+    "build": "powershell -ExecutionPolicy Bypass -File scripts/build.ps1",
+    "build:gui": "powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -Gui",
+    "probe": "powershell -ExecutionPolicy Bypass -File scripts/probe.ps1",
+    "flash": "powershell -ExecutionPolicy Bypass -File scripts/flash.ps1",
+    "verify-running": "powershell -ExecutionPolicy Bypass -File scripts/verify-running.ps1",
+    "install-jlink": "powershell -ExecutionPolicy Bypass -File scripts/install-jlink.ps1",
+    "debug-server": "powershell -ExecutionPolicy Bypass -File scripts/debug-server.ps1",
+    "gdb": "powershell -ExecutionPolicy Bypass -File scripts/gdb.ps1"
+  }
+}

@@ -1,0 +1,81 @@
+# ProMicro nRF52840 watch
+
+Минимальная безопасная основа прошивки наручных часов и локальное окружение
+сборки/отладки через J-LinkOB.
+
+Архитектурные документы:
+
+- [`docs/PROJECT_DESCRIPTION.md`](docs/PROJECT_DESCRIPTION.md);
+- [`docs/CURRENT_STATE_AND_ROADMAP.md`](docs/CURRENT_STATE_AND_ROADMAP.md);
+- [`dependencies.json`](dependencies.json).
+
+## Что уже есть
+
+- bare-metal Cortex-M4F startup и linker script для nRF52840 (1 MiB Flash,
+  256 KiB RAM);
+- диагностическая прошивка без обращения к GPIO;
+- локально закреплённые GCC, CMake, Ninja и резервный OpenOCD;
+- SEGGER J-Link Commander/GDB Server для штатного Windows-драйвера J-LinkOB;
+- PowerShell-команды для probe/build/flash/GDB;
+- задачи VS Code.
+
+Проект пока намеренно не предполагает распиновку дисплея, кнопок, зарядного
+контроллера и LED. Неверное предположение о GPIO у разных ProMicro-клонов может
+конфликтовать с подключённой периферией.
+
+## Команды
+
+Из PowerShell в каталоге проекта:
+
+```powershell
+npx xpm install
+npm run install-jlink
+npm run probe
+npm run build
+npm run build:gui
+npm run flash
+npm run verify-running
+```
+
+Для отладки запустите два терминала:
+
+```powershell
+npm run debug-server
+```
+
+```powershell
+npm run gdb
+```
+
+В GDB можно проверить работу диагностической прошивки:
+
+```text
+monitor reset
+continue
+<Ctrl+C>
+p/x watch_debug_state
+```
+
+Поле `heartbeat` должно расти между остановками.
+
+`build:gui` дополнительно проверяет интеграцию с независимым репозиторием
+`external/NOG_C`. Universal UI пока подключён на уровне контрактов: его
+реализация начинается после стабилизации reference model согласно собственной
+спецификации.
+
+## Важные ограничения
+
+`flash` перед первой записью автоматически сохраняет весь Flash и UICR в
+`backups/`. Затем она записывает только адреса, занятые
+`watch_firmware.hex`, начиная с `0x00000000`. Команда не выполняет mass erase и
+не пишет UICR. Однако прошивка с адреса 0 заменяет находившийся там
+загрузчик/приложение — храните созданный backup.
+
+OpenOCD оставлен как альтернативный backend. На Windows он не может открыть
+J-Link с фирменным SEGGER USB-драйвером (`LIBUSB_ERROR_NOT_SUPPORTED`).
+Подменять драйвер через Zadig не рекомендуется; штатные J-Link Commander и GDB
+Server работают с ним напрямую.
+
+Перед разработкой функций часов нужно зафиксировать точную модель платы и
+распиновку: дисплей, touch/кнопки, вибромотор, RTC, датчики, измерение батареи и
+управление питанием.

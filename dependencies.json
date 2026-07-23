@@ -1,0 +1,24 @@
+{
+  "format": "watch.external-dependencies",
+  "formatVersion": 1,
+  "dependencies": [
+    {
+      "id": "nog-c",
+      "role": "generic-graphics-engine",
+      "path": "external/NOG_C",
+      "repository": "https://github.com/nsspost/NOG_C.git",
+      "branch": "main",
+      "revision": "2fc3c089c40c3ecc9d783e93939ca08fc43f916a",
+      "integration": "optional-cmake"
+    },
+    {
+      "id": "tsehosense-universal-ui",
+      "role": "semantic-ui-layer",
+      "path": "external/tsehosense-universal-ui",
+      "repository": null,
+      "branch": "main",
+      "revision": "c8d79beeb595cc58e90989611e4fa9fe2babc398",
+      "integration": "contracts-only"
+    }
+  ]
+}
