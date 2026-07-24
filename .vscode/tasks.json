@@ -23,6 +23,20 @@
       "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/flash.ps1"],
       "dependsOn": "watch: build",
       "problemMatcher": []
+    },
+    {
+      "label": "watch: verify UI",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/verify-ui.ps1"],
+      "problemMatcher": []
+    },
+    {
+      "label": "watch: verify running",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/verify-running.ps1"],
+      "problemMatcher": []
     }
   ]
 }

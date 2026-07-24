@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tsehosense.local/schemas/graphics-skin.schema.json",
+  "title": "TsehoSense Graphics Skin Authoring Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "formatVersion",
+    "skinId",
+    "version",
+    "targets",
+    "requiredSemanticRoles",
+    "requiredIcons",
+    "budgets",
+    "fallbackSkinId"
+  ],
+  "properties": {
+    "format": { "const": "tseho.graphics.skin" },
+    "formatVersion": { "type": "integer", "minimum": 1 },
+    "skinId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["profileId", "shape", "width", "height", "pixelProfile", "layout"],
+        "properties": {
+          "profileId": { "type": "string" },
+          "shape": { "enum": ["square", "round"] },
+          "width": { "type": "integer", "minimum": 64, "maximum": 2048 },
+          "height": { "type": "integer", "minimum": 64, "maximum": 2048 },
+          "pixelProfile": { "enum": ["mono1", "gray4", "rgb565"] },
+          "layout": { "type": "string" }
+        }
+      }
+    },
+    "requiredSemanticRoles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "requiredIcons": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxPackageBytes", "maxPeakRamBytes", "maxDirtyRects"],
+      "properties": {
+        "maxPackageBytes": { "type": "integer", "minimum": 1024 },
+        "maxPeakRamBytes": { "type": "integer", "minimum": 1024 },
+        "maxDirtyRects": { "type": "integer", "minimum": 1, "maximum": 32 }
+      }
+    },
+    "fallbackSkinId": { "type": "string" },
+    "licenseFiles": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

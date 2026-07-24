@@ -1,0 +1,28 @@
+{
+  "profileId": "watch.round.256.mono1",
+  "shape": "round",
+  "width": 256,
+  "height": 256,
+  "sizeClass": "s",
+  "pixelFormat": "mono1",
+  "inputs": ["touch", "crown", "button-back"],
+  "safeArea": {"top": 22, "right": 26, "bottom": 22, "left": 26},
+  "minimumTextPx": 9,
+  "minimumPrimaryTextPx": 18,
+  "minimumHitPx": 42,
+  "budgets": {
+    "framebufferBytes": 8192,
+    "peakRendererRamBytes": 12288,
+    "maxDirtyRects": 8,
+    "maxFps": 1
+  },
+  "capabilities": {
+    "grayLevels": 2,
+    "supportsTouch": true,
+    "supportsAnimation": false,
+    "supportsSparkline": true,
+    "supportsGauge": true,
+    "usesCircularMask": true
+  }
+}
+

@@ -1,0 +1,65 @@
+{
+  "format": "tseho.graphics.layout",
+  "formatVersion": 1,
+  "profileId": "watch.square.compact.256",
+  "shape": "square",
+  "width": 256,
+  "height": 256,
+  "pixelProfile": "mono1",
+  "clip": { "type": "rect", "bounds": [0, 0, 256, 256] },
+  "safeArea": [14, 0, 14, 0],
+  "homeNormal": {
+    "regions": [
+      { "id": "time", "bounds": [12, 11, 232, 88], "textRole": "displayTimeSquare", "align": "center", "update": "minute" },
+      { "id": "divider.top", "bounds": [14, 101, 228, 2], "colorRole": "dividerStrong" },
+      { "id": "status", "bounds": [14, 104, 228, 44], "columns": [113, 2, 113] },
+      { "id": "divider.middle", "bounds": [14, 150, 228, 2], "colorRole": "dividerStrong" },
+      { "id": "device", "bounds": [14, 158, 228, 66] },
+      { "id": "bottom", "bounds": [14, 221, 228, 35], "columns": [62, 104, 62] }
+    ],
+    "elements": {
+      "status.iconSize": 38,
+      "status.valueTextRole": "statusSquare",
+      "status.gap": 7,
+      "status.dividerHeight": 38,
+      "device.nameBounds": [14, 158, 180, 46],
+      "device.nameTextRole": "deviceSquare",
+      "device.stateBounds": [14, 198, 160, 22],
+      "device.stateFontSize": 20,
+      "device.chevronBounds": [196, 158, 60, 60],
+      "device.chevronWeight": "bold",
+      "bottom.counterFontSize": 26,
+      "bottom.nearbyFontSize": 18
+    },
+    "hitTargets": [
+      { "id": "time", "bounds": [12, 5, 232, 94], "action": "open.clock" },
+      { "id": "battery", "bounds": [14, 104, 113, 44], "action": "open.battery" },
+      { "id": "weather", "bounds": [129, 104, 113, 44], "action": "open.weather" },
+      { "id": "device", "bounds": [14, 153, 228, 66], "action": "open.currentDevice" },
+      { "id": "unread.phone", "bounds": [14, 212, 62, 44], "action": "open.phoneNotifications" },
+      { "id": "nearby", "bounds": [76, 212, 104, 44], "action": "open.nearbyDevices" },
+      { "id": "unread.ecosystem", "bounds": [180, 212, 62, 44], "action": "open.ecosystemEvents" }
+    ]
+  },
+  "homeAmbient": {
+    "time": { "bounds": [12, 74, 232, 94], "textRole": "displayTimeAmbientSquare", "align": "center" },
+    "markersBounds": [86, 198, 84, 20]
+  },
+  "screen": {
+    "contentBounds": [14, 0, 228, 256],
+    "headerHeight": 64,
+    "headerDivider": 2,
+    "backHitSize": 44,
+    "listRowHeight": { "min": 60, "device": 64 },
+    "deviceHealthHeight": 52,
+    "primaryMetricsHeight": 78,
+    "allParametersHeight": 56,
+    "actionsHeight": 56
+  },
+  "overlays": {
+    "ordinaryToast": { "bounds": [8, 178, 240, 70], "border": 2 },
+    "important": { "bounds": [0, 0, 256, 256], "padding": 14, "border": 2 },
+    "blocking": { "bounds": [0, 0, 256, 256], "padding": 16, "border": 4 },
+    "command": { "bounds": [0, 0, 256, 256], "padding": [24, 20, 18, 20], "border": 2 }
+  }
+}

@@ -9,6 +9,6 @@ if (-not (Test-Path $elf)) {
 
 & $gdb $elf `
     -ex "target extended-remote localhost:2331" `
-    -ex "monitor reset halt" `
-    -ex "break main"
+    -ex "break main" `
+    -ex "monitor reset"
 exit $LASTEXITCODE

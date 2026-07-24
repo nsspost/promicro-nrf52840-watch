@@ -1,7 +1,8 @@
 # Текущее состояние и план экспериментальных часов
 
-Дата ревизии: 2026-07-23  
-Статус: планирование; следующая реализация требует выбора аппаратной цели
+Дата ревизии: 2026-07-24
+Статус: аппаратная цель подтверждена; полноценный GUI на тестовых данных
+собран, прошит и проверен
 
 ## 1. Что уже есть
 
@@ -13,6 +14,7 @@
 - Cortex-M4F определяется, Flash программируется и проверяется.
 - До первой записи сохранены полный Flash 1 МиБ и UICR.
 - Диагностическая прошивка запускается; RAM heartbeat проверен через J-Link.
+- Подтверждены круглый дисплей GC9A01 240×240 RGB565 и touch CST816D.
 
 ### Firmware и инструменты
 
@@ -22,11 +24,13 @@
 - SEGGER probe/flash/GDB scripts;
 - автоматический backup перед первой записью;
 - VS Code tasks и Cortex-Debug configuration;
-- воспроизводимые `build`, `probe`, `flash`, `verify-running`;
+- воспроизводимые `build`, `probe`, `flash`, `verify-ui`, `verify-running`;
 - optional CMake integration с NOG_C.
 
-Текущий firmware не содержит BLE, scheduler/RTOS, USB application, драйвер
-дисплея, ввод, энергосбережение, файловое хранилище или UI.
+Текущий firmware содержит драйверы дисплея и touch, framebuffer-free NOG_C
+backend и 11-экранный GUI на тестовой View Model. Он пока не содержит BLE,
+scheduler/RTOS, USB application, энергосбережение, файловое хранилище и
+подключение реальных TsehoSense-данных.
 
 ### NOG_C
 
@@ -35,7 +39,7 @@
 ```text
 external/NOG_C
 origin: https://github.com/nsspost/NOG_C.git
-revision: 2fc3c089c40c3ecc9d783e93939ca08fc43f916a
+revision: 963e61516253ddd75e4edc5e0b80d4528fb4f2d1
 ```
 
 На текущей ревизии есть:
@@ -56,18 +60,16 @@ revision: 2fc3c089c40c3ecc9d783e93939ca08fc43f916a
 
 ### TsehoSense Universal UI
 
-Создан отдельный локальный Git-репозиторий:
+Контракты v0.1 находятся непосредственно в этом репозитории:
 
 ```text
-external/tsehosense-universal-ui
-branch: main
-revision: c8d79beeb595cc58e90989611e4fa9fe2babc398
-remote: не назначен
+docs/tsehosense-universal-ui-spec-v0.1
+revision: v0.1
 ```
 
-В нём находится спецификация v0.1, схемы, Display Profiles, PUMP-2 examples,
-ADR proposal и правила реализации. Реализации reference model, renderer,
-binary compiler и C runtime пока нет.
+Там находятся спецификация, схемы, Display Profiles, PUMP-2 examples, ADR
+proposal и правила реализации. Watch-first renderer использует их как
+контракт, но binary compiler/package parser пока не реализован.
 
 Главная граница:
 

@@ -8,16 +8,16 @@
       "path": "external/NOG_C",
       "repository": "https://github.com/nsspost/NOG_C.git",
       "branch": "main",
-      "revision": "2fc3c089c40c3ecc9d783e93939ca08fc43f916a",
+      "revision": "963e61516253ddd75e4edc5e0b80d4528fb4f2d1",
       "integration": "optional-cmake"
     },
     {
       "id": "tsehosense-universal-ui",
       "role": "semantic-ui-layer",
-      "path": "external/tsehosense-universal-ui",
+      "path": "docs/tsehosense-universal-ui-spec-v0.1",
       "repository": null,
-      "branch": "main",
-      "revision": "c8d79beeb595cc58e90989611e4fa9fe2babc398",
+      "branch": null,
+      "revision": "v0.1",
       "integration": "contracts-only"
     }
   ]

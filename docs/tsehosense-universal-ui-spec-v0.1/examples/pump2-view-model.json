@@ -1,0 +1,89 @@
+{
+  "format": "tseho.ui-view",
+  "formatVersion": 1,
+  "viewId": "device.PUMP-2",
+  "sourceRevision": 1842,
+  "catalogVersion": "catalog-v1",
+  "context": {
+    "sourceId": "PUMP-2",
+    "location": "КОНТУР 1",
+    "online": true
+  },
+  "screens": [
+    {
+      "screenId": "overview",
+      "template": "device-overview",
+      "title": "PUMP-2",
+      "components": [
+        {
+          "componentId": "status",
+          "kind": "state",
+          "binding": "device.status",
+          "label": "РАБОТАЕТ",
+          "priority": 100,
+          "visibility": "primary"
+        },
+        {
+          "componentId": "pressure",
+          "kind": "metric",
+          "binding": "values.pressure.outlet",
+          "label": "ДАВЛЕНИЕ",
+          "priority": 90,
+          "visibility": "primary"
+        },
+        {
+          "componentId": "current",
+          "kind": "metric",
+          "binding": "values.motor.current",
+          "label": "ТОК",
+          "priority": 80,
+          "visibility": "primary"
+        },
+        {
+          "componentId": "open-controls",
+          "kind": "navigation",
+          "label": "УПРАВЛЕНИЕ",
+          "action": "navigate"
+        }
+      ]
+    },
+    {
+      "screenId": "controls",
+      "template": "control-list",
+      "title": "УПРАВЛЕНИЕ",
+      "components": [
+        {
+          "componentId": "drive-mode",
+          "kind": "enum",
+          "binding": "values.drive.mode",
+          "label": "РЕЖИМ",
+          "priority": 80,
+          "visibility": "primary",
+          "riskClass": "guarded",
+          "action": "submit-command"
+        },
+        {
+          "componentId": "pump-stop",
+          "kind": "trigger",
+          "label": "ОСТАНОВ",
+          "priority": 100,
+          "visibility": "primary",
+          "riskClass": "critical",
+          "action": "create-critical-request"
+        }
+      ]
+    }
+  ],
+  "policies": {
+    "eventPreemption": [
+      "blocking-event",
+      "important-event",
+      "critical-request-status",
+      "command-status",
+      "ordinary-event"
+    ],
+    "unknownRisk": "critical"
+  },
+  "diagnostics": []
+}
+

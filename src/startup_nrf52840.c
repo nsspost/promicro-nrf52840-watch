@@ -46,6 +46,14 @@ void Reset_Handler(void)
     uint32_t *src = &_etext;
     uint32_t *dst;
 
+    /*
+     * Keep the firmware-controlled branch of APPROTECT open on hardened
+     * nRF52840 revisions. UICR.APPROTECT is also programmed to 0x5A when
+     * flashing, but doing this at the first application instruction keeps
+     * debug access recoverable if UICR is erased during development.
+     */
+    *(volatile uint32_t *)0x40000558u = 0x5Au;
+
     for (dst = &_sdata; dst < &_edata; ++dst) {
         *dst = *src++;
     }

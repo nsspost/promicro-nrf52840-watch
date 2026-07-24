@@ -1,0 +1,31 @@
+{
+  "profileId": "watch.round.240.rgb565",
+  "shape": "round",
+  "width": 240,
+  "height": 240,
+  "sizeClass": "s",
+  "pixelFormat": "rgb565",
+  "inputs": ["touch"],
+  "safeArea": {
+    "top": 20,
+    "right": 20,
+    "bottom": 16,
+    "left": 20
+  },
+  "minimumTextPx": 9,
+  "minimumPrimaryTextPx": 18,
+  "minimumHitPx": 44,
+  "budgets": {
+    "framebufferBytes": 0,
+    "peakRendererRamBytes": 4096,
+    "maxDirtyRects": 8,
+    "maxFps": 8
+  },
+  "capabilities": {
+    "grayLevels": 65536,
+    "supportsTouch": true,
+    "supportsAnimation": true,
+    "supportsSparkline": true,
+    "supportsGauge": false
+  }
+}

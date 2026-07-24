@@ -2,15 +2,30 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "nRF52840: attach via OpenOCD",
+      "name": "nRF52840: J-Link debug",
+      "type": "cortex-debug",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/watch_firmware.elf",
+      "servertype": "jlink",
+      "serverpath": "C:/Program Files/SEGGER/JLink_V952/JLinkGDBServerCL.exe",
+      "gdbPath": "C:/ST/STM32CubeIDE_2.0.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.100.202509120712/tools/bin/arm-none-eabi-gdb.exe",
+      "device": "NRF52840_XXAA",
+      "interface": "swd",
+      "serverArgs": ["-speed", "1000"],
+      "runToEntryPoint": "main",
+      "preLaunchTask": "watch: build"
+    },
+    {
+      "name": "nRF52840: attach to external J-Link server",
       "type": "cortex-debug",
       "request": "attach",
       "cwd": "${workspaceFolder}",
       "executable": "${workspaceFolder}/build/watch_firmware.elf",
       "servertype": "external",
       "gdbTarget": "localhost:2331",
-      "device": "nRF52840_xxAA",
-      "runToEntryPoint": "main"
+      "gdbPath": "C:/ST/STM32CubeIDE_2.0.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.100.202509120712/tools/bin/arm-none-eabi-gdb.exe",
+      "device": "NRF52840_XXAA"
     }
   ]
 }

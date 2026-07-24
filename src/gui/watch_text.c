@@ -5,7 +5,27 @@
 #define GLYPH(a, b, c, d, e) \
     (uint16_t)(((a) << 12) | ((b) << 9) | ((c) << 6) | ((d) << 3) | (e))
 
-static uint16_t glyph_pattern(char character)
+static uint32_t next_codepoint(const char **text)
+{
+    const uint8_t *input = (const uint8_t *)*text;
+    uint32_t codepoint;
+
+    if (input[0] < 0x80u) {
+        codepoint = input[0];
+        *text += 1;
+    } else if ((input[0] & 0xE0u) == 0xC0u &&
+               (input[1] & 0xC0u) == 0x80u) {
+        codepoint = ((uint32_t)(input[0] & 0x1Fu) << 6) |
+                    (uint32_t)(input[1] & 0x3Fu);
+        *text += 2;
+    } else {
+        codepoint = '?';
+        *text += 1;
+    }
+    return codepoint;
+}
+
+static uint16_t glyph_pattern(uint32_t character)
 {
     switch (character) {
         case '0': return GLYPH(7, 5, 5, 5, 7);
@@ -44,8 +64,52 @@ static uint16_t glyph_pattern(char character)
         case 'X': return GLYPH(5, 5, 2, 5, 5);
         case 'Y': return GLYPH(5, 5, 2, 2, 2);
         case 'Z': return GLYPH(7, 1, 2, 4, 7);
+        case 'a': return GLYPH(2, 5, 7, 5, 5);
+        case 'b': return GLYPH(6, 5, 6, 5, 6);
+        case 'r': return GLYPH(6, 5, 6, 5, 5);
         case '-': return GLYPH(0, 0, 7, 0, 0);
         case ':': return GLYPH(0, 2, 0, 2, 0);
+        case '.': return GLYPH(0, 0, 0, 0, 2);
+        case '%': return GLYPH(5, 1, 2, 4, 5);
+        case '/': return GLYPH(1, 1, 2, 4, 4);
+        case '+': return GLYPH(0, 2, 7, 2, 0);
+        case '!': return GLYPH(2, 2, 2, 0, 2);
+        case '?': return GLYPH(6, 1, 2, 0, 2);
+        case '>': return GLYPH(4, 2, 1, 2, 4);
+        case '<': return GLYPH(1, 2, 4, 2, 1);
+        case 0x0401u: return GLYPH(5, 7, 4, 6, 7); /* Ё */
+        case 0x0410u: return GLYPH(2, 5, 7, 5, 5); /* А */
+        case 0x0411u: return GLYPH(7, 4, 6, 5, 6); /* Б */
+        case 0x0412u: return GLYPH(6, 5, 6, 5, 6); /* В */
+        case 0x0413u: return GLYPH(7, 4, 4, 4, 4); /* Г */
+        case 0x0414u: return GLYPH(2, 5, 5, 7, 5); /* Д */
+        case 0x0415u: return GLYPH(7, 4, 6, 4, 7); /* Е */
+        case 0x0416u: return GLYPH(5, 2, 7, 2, 5); /* Ж */
+        case 0x0417u: return GLYPH(6, 1, 3, 1, 6); /* З */
+        case 0x0418u: return GLYPH(5, 5, 7, 7, 5); /* И */
+        case 0x0419u: return GLYPH(2, 5, 7, 7, 5); /* Й */
+        case 0x041Au: return GLYPH(5, 5, 6, 5, 5); /* К */
+        case 0x041Bu: return GLYPH(3, 5, 5, 5, 5); /* Л */
+        case 0x041Cu: return GLYPH(5, 7, 7, 5, 5); /* М */
+        case 0x041Du: return GLYPH(5, 5, 7, 5, 5); /* Н */
+        case 0x041Eu: return GLYPH(2, 5, 5, 5, 2); /* О */
+        case 0x041Fu: return GLYPH(7, 5, 5, 5, 5); /* П */
+        case 0x0420u: return GLYPH(6, 5, 6, 4, 4); /* Р */
+        case 0x0421u: return GLYPH(3, 4, 4, 4, 3); /* С */
+        case 0x0422u: return GLYPH(7, 2, 2, 2, 2); /* Т */
+        case 0x0423u: return GLYPH(5, 5, 3, 1, 6); /* У */
+        case 0x0424u: return GLYPH(2, 7, 2, 7, 2); /* Ф */
+        case 0x0425u: return GLYPH(5, 5, 2, 5, 5); /* Х */
+        case 0x0426u: return GLYPH(5, 5, 5, 7, 1); /* Ц */
+        case 0x0427u: return GLYPH(5, 5, 3, 1, 1); /* Ч */
+        case 0x0428u: return GLYPH(5, 5, 5, 5, 7); /* Ш */
+        case 0x0429u: return GLYPH(5, 5, 5, 7, 1); /* Щ */
+        case 0x042Au: return GLYPH(4, 4, 6, 5, 6); /* Ъ */
+        case 0x042Bu: return GLYPH(5, 5, 7, 5, 7); /* Ы */
+        case 0x042Cu: return GLYPH(4, 4, 6, 5, 6); /* Ь */
+        case 0x042Du: return GLYPH(6, 1, 3, 1, 6); /* Э */
+        case 0x042Eu: return GLYPH(5, 7, 7, 7, 5); /* Ю */
+        case 0x042Fu: return GLYPH(3, 5, 3, 5, 5); /* Я */
         default: return 0u;
     }
 }
@@ -63,7 +127,7 @@ void watch_draw_text(gno_context_t *graphics,
 
     int pen_x = x;
     while (*text != '\0') {
-        uint16_t pattern = glyph_pattern(*text++);
+        uint16_t pattern = glyph_pattern(next_codepoint(&text));
 
         for (int row = 0; row < 5; ++row) {
             uint8_t bits =
@@ -102,7 +166,8 @@ int watch_text_width(const char *text, uint8_t scale)
     }
 
     int characters = 0;
-    while (*text++ != '\0') {
+    while (*text != '\0') {
+        (void)next_codepoint(&text);
         ++characters;
     }
     return (characters > 0) ? ((characters * 4 - 1) * scale) : 0;

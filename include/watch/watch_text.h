@@ -6,8 +6,8 @@
 #include <gno/gno.h>
 
 /*
- * Compact watch-skin font. Uppercase ASCII and digits are rendered from a
- * bounded 3x5 pattern at an integer scale without dynamic allocation.
+ * Compact watch-skin font. Uppercase ASCII, uppercase Russian UTF-8 and
+ * digits are rendered from a bounded 3x5 pattern without dynamic allocation.
  */
 void watch_draw_text(gno_context_t *graphics,
                      int x,

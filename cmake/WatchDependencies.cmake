@@ -3,8 +3,8 @@ set(WATCH_NOG_C_DIR
     CACHE PATH "Path to the independent NOG_C repository")
 
 set(WATCH_UI_DIR
-    "${CMAKE_CURRENT_LIST_DIR}/../external/tsehosense-universal-ui"
-    CACHE PATH "Path to the independent Universal UI repository")
+    "${CMAKE_CURRENT_LIST_DIR}/../docs/tsehosense-universal-ui-spec-v0.1"
+    CACHE PATH "Path to the Universal UI v0.1 contracts")
 
 option(WATCH_ENABLE_GUI_STACK
        "Build the generic NOG_C engine for watch GUI integration experiments"
@@ -17,9 +17,11 @@ if(WATCH_ENABLE_GUI_STACK)
             "Restore the external repository before enabling the GUI stack.")
     endif()
 
-    if(NOT EXISTS "${WATCH_UI_DIR}/docs/spec-v0.1/PACKAGE_MANIFEST.json")
-        message(FATAL_ERROR
-            "Universal UI contracts not found at '${WATCH_UI_DIR}'.")
+    if(NOT EXISTS "${WATCH_UI_DIR}/PACKAGE_MANIFEST.json")
+        message(WARNING
+            "Universal UI contracts not found at '${WATCH_UI_DIR}'. "
+            "The test-data GUI can still build, but its contract source "
+            "cannot be audited.")
     endif()
 
     set(GNO_BUILD_DEMO OFF CACHE BOOL "" FORCE)

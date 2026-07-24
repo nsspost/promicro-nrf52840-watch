@@ -1,0 +1,146 @@
+{
+  "source": "@phosphor-icons/react",
+  "viewBox": "0 0 256 256",
+  "variants": [
+    {
+      "name": "ArrowClockwise",
+      "weight": "regular"
+    },
+    {
+      "name": "ArrowSquareOut",
+      "weight": "regular"
+    },
+    {
+      "name": "BatteryMedium",
+      "weight": "regular"
+    },
+    {
+      "name": "BellSimple",
+      "weight": "regular"
+    },
+    {
+      "name": "Broadcast",
+      "weight": "regular"
+    },
+    {
+      "name": "CaretLeft",
+      "weight": "regular"
+    },
+    {
+      "name": "CaretRight",
+      "weight": "regular"
+    },
+    {
+      "name": "ChatCircle",
+      "weight": "regular"
+    },
+    {
+      "name": "CheckCircle",
+      "weight": "regular"
+    },
+    {
+      "name": "CircleNotch",
+      "weight": "regular"
+    },
+    {
+      "name": "Cloud",
+      "weight": "regular"
+    },
+    {
+      "name": "Gauge",
+      "weight": "regular"
+    },
+    {
+      "name": "HandTap",
+      "weight": "regular"
+    },
+    {
+      "name": "Hexagon",
+      "weight": "regular"
+    },
+    {
+      "name": "Info",
+      "weight": "regular"
+    },
+    {
+      "name": "ListBullets",
+      "weight": "regular"
+    },
+    {
+      "name": "LockKey",
+      "weight": "regular"
+    },
+    {
+      "name": "MapPin",
+      "weight": "regular"
+    },
+    {
+      "name": "Minus",
+      "weight": "regular"
+    },
+    {
+      "name": "Plus",
+      "weight": "regular"
+    },
+    {
+      "name": "Power",
+      "weight": "regular"
+    },
+    {
+      "name": "Radio",
+      "weight": "regular"
+    },
+    {
+      "name": "ShieldWarning",
+      "weight": "regular"
+    },
+    {
+      "name": "SlidersHorizontal",
+      "weight": "regular"
+    },
+    {
+      "name": "StopCircle",
+      "weight": "regular"
+    },
+    {
+      "name": "UserSwitch",
+      "weight": "regular"
+    },
+    {
+      "name": "Warning",
+      "weight": "regular"
+    },
+    {
+      "name": "WarningOctagon",
+      "weight": "regular"
+    },
+    {
+      "name": "Waveform",
+      "weight": "regular"
+    },
+    {
+      "name": "WifiSlash",
+      "weight": "regular"
+    },
+    {
+      "name": "X",
+      "weight": "regular"
+    },
+    {
+      "name": "XCircle",
+      "weight": "regular"
+    },
+    {
+      "name": "CaretRight",
+      "weight": "bold"
+    },
+    {
+      "name": "Broadcast",
+      "weight": "fill"
+    },
+    {
+      "name": "CheckCircle",
+      "weight": "fill"
+    }
+  ]
+}

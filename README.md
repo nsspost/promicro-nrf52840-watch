@@ -1,5 +1,15 @@
 # ProMicro nRF52840 watch
 
+На подключённой плате работает круглый GUI 240×240 на тестовых данных:
+11 экранов, semantic touch, guarded/critical lifecycle, журнал событий и
+блокирующее event preemption. Реальные данные и BLE пока не подключены.
+Подробности: [`docs/FIRST_WATCH_SLICE.md`](docs/FIRST_WATCH_SLICE.md).
+
+В прошивке есть две встроенные шкурки: исходная цветная и новая строгая
+монохромная. Чтобы переключиться, нажмите на часы в верхней части главного
+экрана, затем `СМЕНИТЬ СКИН` и `НАЗАД`. Выбор пока хранится только до
+перезагрузки; после reset включается цветная шкурка.
+
 Минимальная безопасная основа прошивки наручных часов и локальное окружение
 сборки/отладки через J-LinkOB.
 
@@ -34,7 +44,11 @@ npm run probe
 npm run build
 npm run build:gui
 npm run flash
+npm run verify-ui
 npm run verify-running
+npm run render:strict-host
+npm run generate:strict-icons
+npm run generate:strict-font
 ```
 
 Для отладки запустите два терминала:
