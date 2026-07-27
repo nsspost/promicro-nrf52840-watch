@@ -2,7 +2,9 @@
 
 На подключённой плате работает круглый GUI 240×240 на тестовых данных:
 11 экранов, semantic touch, guarded/critical lifecycle, журнал событий и
-блокирующее event preemption. Реальные данные и BLE пока не подключены.
+блокирующее event preemption. BLE Nordic UART Service работает на S140:
+приложение Chronos подключается к `Tseho Watch`, подписывается на TX и
+передаёт пакеты в RX. Разбор времени, погоды и уведомлений ещё не реализован.
 Подробности: [`docs/FIRST_WATCH_SLICE.md`](docs/FIRST_WATCH_SLICE.md).
 
 В прошивке есть две встроенные шкурки: исходная цветная и новая строгая
@@ -17,6 +19,7 @@
 
 - [`docs/PROJECT_DESCRIPTION.md`](docs/PROJECT_DESCRIPTION.md);
 - [`docs/CURRENT_STATE_AND_ROADMAP.md`](docs/CURRENT_STATE_AND_ROADMAP.md);
+- [`docs/BLE_CHRONOS_BRINGUP.md`](docs/BLE_CHRONOS_BRINGUP.md);
 - [`dependencies.json`](dependencies.json).
 
 ## Что уже есть
@@ -26,6 +29,7 @@
 - диагностическая прошивка без обращения к GPIO;
 - локально закреплённые GCC, CMake, Ninja и резервный OpenOCD;
 - SEGGER J-Link Commander/GDB Server для штатного Windows-драйвера J-LinkOB;
+- S140 advertising и Nordic UART Service, проверенные с Windows и Chronos;
 - PowerShell-команды для probe/build/flash/GDB;
 - задачи VS Code.
 

@@ -14,7 +14,6 @@
 #define WATCH_BLE_EVENT_BUFFER    256u
 #define WATCH_BLE_CONN_TAG        1u
 #define WATCH_BLE_VALUE_MAX_LEN   20u
-#define WATCH_BLE_SCAN_BUFFER     64u
 
 #define WATCH_NUS_SERVICE_UUID    0x0001u
 #define WATCH_NUS_RX_UUID         0x0002u
@@ -42,11 +41,6 @@ static uint8_t watch_scan_response[] = {
 };
 
 static __attribute__((aligned(4))) uint8_t watch_ble_event[WATCH_BLE_EVENT_BUFFER];
-static __attribute__((aligned(4))) uint8_t watch_ble_scan_data[WATCH_BLE_SCAN_BUFFER];
-static ble_data_t watch_ble_scan_buffer = {
-    .p_data = watch_ble_scan_data,
-    .len = sizeof(watch_ble_scan_data)
-};
 static watch_ble_status_t watch_ble_status;
 static ble_gatts_char_handles_t watch_nus_rx_handles;
 static ble_gatts_char_handles_t watch_nus_tx_handles;
@@ -86,6 +80,7 @@ static bool watch_nus_add_characteristic(uint16_t service_handle,
                                          bool rx,
                                          ble_gatts_char_handles_t *handles)
 {
+    uint8_t initial_value = 0u;
     ble_uuid_t uuid = {
         .uuid = uuid_value,
         .type = watch_nus_uuid_type
@@ -95,15 +90,18 @@ static bool watch_nus_add_characteristic(uint16_t service_handle,
     ble_gatts_char_md_t char_md = {0};
     ble_gatts_attr_md_t cccd_md = {0};
 
-    watch_open_security(&value_md.read_perm);
-    watch_open_security(&value_md.write_perm);
+    if (rx) {
+        watch_open_security(&value_md.read_perm);
+        watch_open_security(&value_md.write_perm);
+    }
     value_md.vloc = BLE_GATTS_VLOC_STACK;
     value_md.vlen = 1u;
 
     value_attr.p_uuid = &uuid;
     value_attr.p_attr_md = &value_md;
-    value_attr.init_len = 0u;
+    value_attr.init_len = 1u;
     value_attr.max_len = WATCH_BLE_VALUE_MAX_LEN;
+    value_attr.p_value = &initial_value;
 
     if (rx) {
         char_md.char_props.write = 1u;
@@ -195,24 +193,6 @@ static bool watch_advertising_start(bool configure)
     return true;
 }
 
-static bool watch_scanning_start(bool configure)
-{
-    ble_gap_scan_params_t params = {
-        .active = 0u,
-        .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL,
-        .scan_phys = BLE_GAP_PHY_1MBPS,
-        .interval = 160u,
-        .window = 80u,
-        .timeout = 0u
-    };
-
-    watch_ble_scan_buffer.len = sizeof(watch_ble_scan_data);
-    return watch_ble_check(
-        sd_ble_gap_scan_start(configure ? &params : NULL,
-                              &watch_ble_scan_buffer),
-        17u);
-}
-
 static void watch_chronos_sync_request(void)
 {
     static const uint8_t packet[] = {
@@ -275,7 +255,7 @@ bool watch_ble_init(void)
     cfg = (ble_cfg_t){0};
     cfg.gap_cfg.role_count_cfg.adv_set_count = 1u;
     cfg.gap_cfg.role_count_cfg.periph_role_count = 1u;
-    cfg.gap_cfg.role_count_cfg.central_role_count = 1u;
+    cfg.gap_cfg.role_count_cfg.central_role_count = 0u;
     if (!watch_ble_check(sd_ble_cfg_set(BLE_GAP_CFG_ROLE_COUNT, &cfg,
                                         ram_start), 3u)) {
         return false;
@@ -309,7 +289,7 @@ bool watch_ble_init(void)
     if (!watch_advertising_start(true)) {
         return false;
     }
-    return watch_scanning_start(true);
+    return true;
 }
 
 static void watch_ble_process_event(const ble_evt_t *event)
@@ -352,17 +332,6 @@ static void watch_ble_process_event(const ble_evt_t *event)
                     write->data[3];
             }
         }
-    } else if (event_id == BLE_GAP_EVT_ADV_REPORT) {
-        const ble_gap_evt_adv_report_t *report =
-            &event->evt.gap_evt.params.adv_report;
-        watch_ble_status.scan_reports++;
-        watch_ble_status.scan_last_rssi = report->rssi;
-        watch_ble_status.scan_last_address =
-            ((uint32_t)report->peer_addr.addr[3] << 24) |
-            ((uint32_t)report->peer_addr.addr[2] << 16) |
-            ((uint32_t)report->peer_addr.addr[1] << 8) |
-            report->peer_addr.addr[0];
-        (void)watch_scanning_start(false);
     }
 }
 
