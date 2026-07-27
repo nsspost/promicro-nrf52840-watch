@@ -20,6 +20,7 @@
 - [`docs/PROJECT_DESCRIPTION.md`](docs/PROJECT_DESCRIPTION.md);
 - [`docs/CURRENT_STATE_AND_ROADMAP.md`](docs/CURRENT_STATE_AND_ROADMAP.md);
 - [`docs/BLE_CHRONOS_BRINGUP.md`](docs/BLE_CHRONOS_BRINGUP.md);
+- [`docs/CHRONOS_INTEGRATION_PLAN.md`](docs/CHRONOS_INTEGRATION_PLAN.md);
 - [`dependencies.json`](dependencies.json).
 
 ## Что уже есть
