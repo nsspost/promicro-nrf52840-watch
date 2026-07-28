@@ -58,6 +58,9 @@ typedef struct {
     uint32_t hfxo_started;
     uint32_t hfxo_start_loops;
     uint32_t hfxo_status;
+    uint32_t media_revision;
+    uint32_t media_state;
+    uint32_t media_volume;
 } watch_debug_state_t;
 
 /*
@@ -293,6 +296,9 @@ int main(void)
             });
         const watch_ble_media_status_t *ble_media =
             watch_ble_get_media_status();
+        watch_debug_state.media_revision = ble_media->revision;
+        watch_debug_state.media_state = ble_media->state;
+        watch_debug_state.media_volume = ble_media->volume;
         watch_ui_media_status_t media = {
             .state = ble_media->state,
             .volume = ble_media->volume,

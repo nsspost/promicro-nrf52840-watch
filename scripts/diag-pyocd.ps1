@@ -1,7 +1,7 @@
 param(
     [string]$ProbeId = "",
     [string]$Frequency = "1m",
-    [int]$DebugBytes = 160
+    [int]$DebugBytes = 176
 )
 
 . (Join-Path $PSScriptRoot "pyocd-common.ps1")
