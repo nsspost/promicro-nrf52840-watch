@@ -33,7 +33,8 @@ typedef enum {
     ACTION_OPEN_EVENT,
     ACTION_ACK_EVENT,
     ACTION_OPEN_DIAGNOSTIC,
-    ACTION_TOGGLE_SKIN
+    ACTION_TOGGLE_SKIN,
+    ACTION_OPEN_MEDIA
 } ui_action_t;
 
 static watch_ui_skin_t active_skin = WATCH_UI_SKIN_STRICT_CONTEXT;
@@ -611,6 +612,7 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
 
     add_hit(ui, 75, 196, 90, 44, ACTION_OPEN_DEVICES, 0u, false);
     add_hit(ui, 165, 196, 51, 44, ACTION_OPEN_EVENTS, 0u, false);
+    add_hit(ui, 24, 196, 44, 44, ACTION_OPEN_MEDIA, 0u, false);
     add_hit(ui, 88, 3, 64, 44, ACTION_OPEN_DIAGNOSTIC, 0u, false);
 }
 
@@ -1281,6 +1283,43 @@ static void draw_diagnostic(watch_ui_t *ui, watch_time_t time)
                 ACTION_BACK, 0u, false);
 }
 
+static void draw_media_screen(watch_ui_t *ui)
+{
+    const watch_ui_media_status_t *media = &ui->media;
+    char time_text[6] = "00:00";
+    uint32_t position = media->position_s;
+    uint32_t minutes = position / 60u;
+    uint32_t seconds = position % 60u;
+    time_text[0] = (char)('0' + ((minutes / 10u) % 10u));
+    time_text[1] = (char)('0' + (minutes % 10u));
+    time_text[3] = (char)('0' + (seconds / 10u));
+    time_text[4] = (char)('0' + (seconds % 10u));
+    draw_header(ui, "МУЗЫКА", true, color_text());
+    gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
+    gno_fill_rect(ui->graphics, 42, 69, 52, 52, color_info());
+    watch_draw_text(ui->graphics, 56, 82,
+                    media->state == 1u ? ">" : "||", 4u, color_text());
+    watch_draw_text(ui->graphics, 106, 72,
+                    media->track[0] ? media->track : "нет трека", 2u,
+                    color_text());
+    watch_draw_text(ui->graphics, 106, 103,
+                    media->artist[0] ? media->artist : "Gadgetbridge", 1u,
+                    color_muted());
+    watch_draw_text(ui->graphics, 32, 162, time_text, 1u, color_muted());
+    gno_draw_rect(ui->graphics, 32, 181, 176, 6, color_line());
+    uint16_t progress = media->duration_s == 0u ? 0u :
+        (uint16_t)((uint32_t)172u * media->position_s / media->duration_s);
+    if (progress > 172u) progress = 172u;
+    gno_fill_rect(ui->graphics, 34, 183, progress, 2, color_info());
+    gno_draw_rect(ui->graphics, 28, 199, 52, 30, color_info());
+    gno_draw_rect(ui->graphics, 94, 199, 52, 30, color_accent());
+    gno_draw_rect(ui->graphics, 160, 199, 52, 30, color_info());
+    watch_draw_text(ui->graphics, 45, 207, "|<", 1u, color_text());
+    watch_draw_text(ui->graphics, 111, 207, media->state == 1u ? "||" : ">",
+                    1u, color_text());
+    watch_draw_text(ui->graphics, 177, 207, ">|", 1u, color_text());
+}
+
 static bool render_screen(watch_ui_t *ui, watch_time_t time)
 {
     reset_hits(ui);
@@ -1323,6 +1362,9 @@ static bool render_screen(watch_ui_t *ui, watch_time_t time)
             break;
         case WATCH_UI_SCREEN_DIAGNOSTIC:
             draw_diagnostic(ui, time);
+            break;
+        case WATCH_UI_SCREEN_MEDIA:
+            draw_media_screen(ui);
             break;
         default:
             return false;
@@ -1460,6 +1502,9 @@ static void dispatch_action(watch_ui_t *ui,
             break;
         case ACTION_OPEN_DIAGNOSTIC:
             navigate_to(ui, WATCH_UI_SCREEN_DIAGNOSTIC);
+            break;
+        case ACTION_OPEN_MEDIA:
+            navigate_to(ui, WATCH_UI_SCREEN_MEDIA);
             break;
         case ACTION_TOGGLE_SKIN:
             ui->skin =
@@ -1702,6 +1747,29 @@ bool watch_ui_set_phone_status(watch_ui_t *ui,
             ui->screen == WATCH_UI_SCREEN_DIAGNOSTIC) {
             ui->needs_redraw = true;
         }
+    }
+    return true;
+}
+
+bool watch_ui_set_media_status(watch_ui_t *ui,
+                               const watch_ui_media_status_t *status)
+{
+    if (ui == NULL || !ui->initialized || status == NULL) return false;
+    if (ui->media.revision != status->revision) {
+        ui->media.state = status->state;
+        ui->media.volume = status->volume;
+        ui->media.duration_s = status->duration_s;
+        ui->media.position_s = status->position_s;
+        ui->media.revision = status->revision;
+        for (uint16_t i = 0u; i < sizeof(ui->media.artist); ++i) {
+            ui->media.artist[i] = status->artist[i];
+            if (status->artist[i] == '\0') break;
+        }
+        for (uint16_t i = 0u; i < sizeof(ui->media.track); ++i) {
+            ui->media.track[i] = status->track[i];
+            if (status->track[i] == '\0') break;
+        }
+        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->needs_redraw = true;
     }
     return true;
 }

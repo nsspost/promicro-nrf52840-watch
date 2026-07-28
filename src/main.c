@@ -291,6 +291,24 @@ int main(void)
                 .received_packets = ble->received_packets,
                 .tx_notifications = ble->tx_notifications
             });
+        const watch_ble_media_status_t *ble_media =
+            watch_ble_get_media_status();
+        watch_ui_media_status_t media = {
+            .state = ble_media->state,
+            .volume = ble_media->volume,
+            .duration_s = ble_media->duration_s,
+            .position_s = ble_media->position_s,
+            .revision = ble_media->revision
+        };
+        for (uint16_t i = 0u; i < sizeof(media.artist); ++i) {
+            media.artist[i] = ble_media->artist[i];
+            if (ble_media->artist[i] == '\0') break;
+        }
+        for (uint16_t i = 0u; i < sizeof(media.track); ++i) {
+            media.track[i] = ble_media->track[i];
+            if (ble_media->track[i] == '\0') break;
+        }
+        (void)watch_ui_set_media_status(&watch_ui_runtime, &media);
         watch_debug_state.heartbeat++;
         time = watch_clock_get();
         watch_debug_state.clock_hour = time.hour;

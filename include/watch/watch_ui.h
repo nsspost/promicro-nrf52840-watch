@@ -25,7 +25,8 @@ typedef enum {
     WATCH_UI_SCREEN_CRITICAL_REQUEST,
     WATCH_UI_SCREEN_EVENT_JOURNAL,
     WATCH_UI_SCREEN_EVENT_DETAIL,
-    WATCH_UI_SCREEN_DIAGNOSTIC
+    WATCH_UI_SCREEN_DIAGNOSTIC,
+    WATCH_UI_SCREEN_MEDIA
 } watch_ui_screen_t;
 
 typedef enum {
@@ -67,6 +68,16 @@ typedef struct {
 } watch_ui_phone_status_t;
 
 typedef struct {
+    uint8_t state;
+    uint8_t volume;
+    uint32_t duration_s;
+    uint32_t position_s;
+    char artist[49];
+    char track[97];
+    uint32_t revision;
+} watch_ui_media_status_t;
+
+typedef struct {
     int16_t x;
     int16_t y;
     int16_t w;
@@ -98,6 +109,7 @@ typedef struct {
     uint8_t command_demo_outcome;
     uint8_t critical_demo_outcome;
     watch_ui_phone_status_t phone;
+    watch_ui_media_status_t media;
     uint32_t phase_started_at;
     watch_time_t displayed_time;
     bool initialized;
@@ -117,6 +129,8 @@ watch_ui_skin_t watch_ui_get_skin(const watch_ui_t *ui);
 bool watch_ui_set_skin(watch_ui_t *ui, watch_ui_skin_t skin);
 bool watch_ui_set_phone_status(watch_ui_t *ui,
                                watch_ui_phone_status_t status);
+bool watch_ui_set_media_status(watch_ui_t *ui,
+                               const watch_ui_media_status_t *status);
 
 /*
  * Deterministic helpers for GDB and manufacturing checks. They exercise the
