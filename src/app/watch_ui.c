@@ -1286,7 +1286,42 @@ static void draw_diagnostic(watch_ui_t *ui, watch_time_t time)
                 ACTION_BACK, 0u, false);
 }
 
-static void draw_media_screen(watch_ui_t *ui)
+static void draw_media_marquee(gno_context_t *graphics,
+                               int x, int y, int width,
+                               const char *text, uint8_t scale,
+                               gno_color_t color, uint32_t phase)
+{
+    int text_width = skin_text_width(text, scale);
+    gno_fill_rect(graphics, x, y, width, 22, color_background());
+    if (text_width <= width) {
+        watch_draw_text(graphics, x, y, text, scale, color);
+        return;
+    }
+
+    int cycle = text_width + 20;
+    int offset = (int)((phase * 2u) % (uint32_t)cycle);
+    if (gno_push_clip(graphics,
+                      (gno_rect_t) { x, y, width, 22 })) {
+        watch_draw_text(graphics, x - offset, y, text, scale, color);
+        watch_draw_text(graphics, x - offset + cycle, y,
+                        text, scale, color);
+        (void)gno_pop_state(graphics);
+    }
+}
+
+static void draw_media_texts(watch_ui_t *ui, watch_time_t time)
+{
+    const watch_ui_media_status_t *media = &ui->media;
+    uint32_t phase = time_ticks(time) / 2u;
+    draw_media_marquee(ui->graphics, 106, 72, 96,
+                       media->track[0] ? media->track : "нет трека",
+                       2u, color_text(), phase);
+    draw_media_marquee(ui->graphics, 106, 103, 96,
+                       media->artist[0] ? media->artist : "Gadgetbridge",
+                       1u, color_muted(), phase);
+}
+
+static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
 {
     const watch_ui_media_status_t *media = &ui->media;
     char time_text[6] = "00:00";
@@ -1302,12 +1337,7 @@ static void draw_media_screen(watch_ui_t *ui)
     gno_fill_rect(ui->graphics, 42, 69, 52, 52, color_info());
     watch_draw_text(ui->graphics, 56, 82,
                     media->state == 1u ? ">" : "||", 4u, color_text());
-    watch_draw_text(ui->graphics, 106, 72,
-                    media->track[0] ? media->track : "нет трека", 2u,
-                    color_text());
-    watch_draw_text(ui->graphics, 106, 103,
-                    media->artist[0] ? media->artist : "Gadgetbridge", 1u,
-                    color_muted());
+    draw_media_texts(ui, time);
     watch_draw_text(ui->graphics, 32, 162, time_text, 1u, color_muted());
     gno_draw_rect(ui->graphics, 32, 181, 176, 6, color_line());
     uint16_t progress = media->duration_s == 0u ? 0u :
@@ -1370,7 +1400,7 @@ static bool render_screen(watch_ui_t *ui, watch_time_t time)
             draw_diagnostic(ui, time);
             break;
         case WATCH_UI_SCREEN_MEDIA:
-            draw_media_screen(ui);
+            draw_media_screen(ui, time);
             break;
         default:
             return false;
@@ -1639,6 +1669,12 @@ bool watch_ui_update(watch_ui_t *ui, watch_time_t time)
             time.subsecond != ui->displayed_time.subsecond) {
             draw_home_progress(ui, time);
         }
+        ui->displayed_time = time;
+    }
+
+    if (ui->screen == WATCH_UI_SCREEN_MEDIA &&
+        (time_ticks(time) / 2u) != (time_ticks(ui->displayed_time) / 2u)) {
+        draw_media_texts(ui, time);
         ui->displayed_time = time;
     }
 
