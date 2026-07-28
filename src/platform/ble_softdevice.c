@@ -44,6 +44,9 @@ static uint8_t watch_scan_response[] = {
 
 static __attribute__((aligned(4))) uint8_t watch_ble_event[WATCH_BLE_EVENT_BUFFER];
 static watch_ble_status_t watch_ble_status;
+static watch_ble_media_status_t watch_ble_media = {
+    .volume = 0xFFu, .shuffle = 0xFFu, .repeat = 0xFFu
+};
 static ble_gatts_char_handles_t watch_link_rx_handles;
 static ble_gatts_char_handles_t watch_link_tx_handles;
 static uint16_t watch_conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -237,6 +240,50 @@ static void watch_link_apply_time(const uint8_t *payload,
                      (uint8_t)((uint32_t)local_seconds % 60u));
 }
 
+static void watch_link_copy_text(char *dst, uint16_t capacity,
+                                 const uint8_t *src, uint8_t length)
+{
+    uint16_t count = length < capacity ? length : (uint16_t)(capacity - 1u);
+    for (uint16_t i = 0u; i < count; ++i) dst[i] = (char)src[i];
+    dst[count] = '\0';
+}
+
+static void watch_link_apply_media_info(const uint8_t *payload, uint16_t length)
+{
+    if ((payload == NULL) || (length < 11u)) return;
+    uint8_t artist = payload[8], album = payload[9], track = payload[10];
+    uint16_t offset = 11u;
+    if ((uint32_t)offset + artist + album + track > length) return;
+    watch_ble_media.duration_s = tseho_link_read_u32_le(payload);
+    watch_ble_media.position_s = tseho_link_read_u32_le(&payload[4]);
+    watch_link_copy_text(watch_ble_media.artist, sizeof(watch_ble_media.artist),
+                         &payload[offset], artist);
+    offset = (uint16_t)(offset + artist);
+    watch_link_copy_text(watch_ble_media.album, sizeof(watch_ble_media.album),
+                         &payload[offset], album);
+    offset = (uint16_t)(offset + album);
+    watch_link_copy_text(watch_ble_media.track, sizeof(watch_ble_media.track),
+                         &payload[offset], track);
+    ++watch_ble_media.revision;
+}
+
+static void watch_link_apply_media_state(const uint8_t *payload, uint16_t length)
+{
+    if ((payload == NULL) || (length < 8u)) return;
+    watch_ble_media.state = payload[0];
+    watch_ble_media.shuffle = payload[1];
+    watch_ble_media.repeat = payload[2];
+    watch_ble_media.position_s = tseho_link_read_u32_le(&payload[4]);
+    ++watch_ble_media.revision;
+}
+
+static void watch_link_apply_media_volume(const uint8_t *payload, uint16_t length)
+{
+    if ((payload == NULL) || (length < 1u)) return;
+    watch_ble_media.volume = payload[0];
+    ++watch_ble_media.revision;
+}
+
 static void watch_link_handle_frame(
     const tseho_link_frame_view_t *frame,
     void *context)
@@ -250,6 +297,12 @@ static void watch_link_handle_frame(
         watch_ble_status.state = WATCH_BLE_STATE_READY;
     } else if (frame->type == TSEHO_LINK_MSG_TIME_SET) {
         watch_link_apply_time(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_MEDIA_INFO) {
+        watch_link_apply_media_info(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_MEDIA_STATE) {
+        watch_link_apply_media_state(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_MEDIA_VOLUME) {
+        watch_link_apply_media_volume(frame->payload, frame->payload_length);
     }
 }
 
@@ -460,4 +513,9 @@ void watch_ble_poll(void)
 const watch_ble_status_t *watch_ble_get_status(void)
 {
     return &watch_ble_status;
+}
+
+const watch_ble_media_status_t *watch_ble_get_media_status(void)
+{
+    return &watch_ble_media;
 }

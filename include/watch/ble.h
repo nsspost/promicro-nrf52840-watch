@@ -27,8 +27,22 @@ typedef struct {
     uint32_t scan_last_address;
 } watch_ble_status_t;
 
+typedef struct {
+    uint8_t state;
+    uint8_t volume;
+    uint8_t shuffle;
+    uint8_t repeat;
+    uint32_t duration_s;
+    uint32_t position_s;
+    char artist[49];
+    char album[49];
+    char track[97];
+    uint32_t revision;
+} watch_ble_media_status_t;
+
 bool watch_ble_init(void);
 void watch_ble_poll(void);
 const watch_ble_status_t *watch_ble_get_status(void);
+const watch_ble_media_status_t *watch_ble_get_media_status(void);
 
 #endif
