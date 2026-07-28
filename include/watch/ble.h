@@ -8,7 +8,8 @@ typedef enum {
     WATCH_BLE_STATE_OFF = 0,
     WATCH_BLE_STATE_ADVERTISING = 1,
     WATCH_BLE_STATE_CONNECTED = 2,
-    WATCH_BLE_STATE_CHRONOS_READY = 3,
+    WATCH_BLE_STATE_SUBSCRIBED = 3,
+    WATCH_BLE_STATE_READY = 4,
     WATCH_BLE_STATE_ERROR = 0xFF
 } watch_ble_state_t;
 
@@ -20,7 +21,7 @@ typedef struct {
     uint32_t received_packets;
     uint32_t received_bytes;
     uint32_t last_packet_header;
-    uint32_t chronos_sync_requests;
+    uint32_t tx_notifications;
     uint32_t scan_reports;
     int32_t scan_last_rssi;
     uint32_t scan_last_address;

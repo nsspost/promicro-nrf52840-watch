@@ -1,8 +1,14 @@
 # Текущее состояние и план экспериментальных часов
 
+> **Решение от 2026-07-27:** целевой телефонный companion — Gadgetbridge.
+> Chronos остаётся только подтверждением BLE/NUS bring-up; этапы разработки
+> Chronos parser отменены. Для телефонной части актуален
+> [`GADGETBRIDGE_INTEGRATION_PLAN.md`](GADGETBRIDGE_INTEGRATION_PLAN.md).
+
 Дата ревизии: 2026-07-27
-Статус: аппаратная цель, GUI и BLE-транспорт Chronos подтверждены на реальной
-плате; следующий этап — разбор прикладных пакетов Chronos
+Статус: GUI подтверждён на плате; Tseho Link codec, собственный GATT service и
+development APK Gadgetbridge собраны; следующий этап — сквозной handshake и
+синхронизация времени на реальном телефоне
 
 ## 1. Что уже есть
 
@@ -37,28 +43,34 @@ backend, 11-экранный GUI на тестовой View Model и bare-metal 
 S140. Он пока не содержит scheduler/RTOS, USB application, энергосбережение,
 файловое хранилище и подключение реальных TsehoSense-данных.
 
-### BLE и Chronos
+### BLE, Tseho Link и исторический Chronos bring-up
 
 - устройство рекламируется как `Tseho Watch`;
-- реализован Nordic UART Service:
-  - service `6e400001-b5a3-f393-e0a9-e50e24dcca9e`;
-  - RX `6e400002-b5a3-f393-e0a9-e50e24dcca9e`;
-  - TX `6e400003-b5a3-f393-e0a9-e50e24dcca9e`;
+- целевая прошивка теперь использует собственный Tseho Link service:
+  - service `7a5c0001-34f7-4e8b-a2d1-6c91f0b5732e`;
+  - RX `7a5c0002-34f7-4e8b-a2d1-6c91f0b5732e`;
+  - TX `7a5c0003-34f7-4e8b-a2d1-6c91f0b5732e`;
+- реализованы bounded C encoder/stream decoder, capability HELLO, READY и
+  применение `TIME_SET` без heap и 64-битного деления;
+- в отдельной ветке Gadgetbridge есть discovery, transport, codec, time,
+  notifications, battery и music adapters; unit tests и APK собираются;
 - Windows успешно выполняет uncached GATT discovery, подписывается на TX,
-  получает запрос синхронизации `AB 00 03 FE 23 80` и пишет тестовые данные в
-  RX;
+  и пишет тестовые данные в RX старого NUS baseline;
 - реальное приложение Chronos на телефоне подключилось, подписалось и
   передало восемь пакетов общим объёмом 70 байт;
-- часы перешли в состояние `CHRONOS_READY`, ошибок SoftDevice нет.
+- этот Chronos/NUS результат является только историческим доказательством
+  исправности BLE.
 
 Для Chronos часы работают только в peripheral role. Ненужное одновременное
 сканирование в central role удалено. Метаданные TX notify-характеристики и CCCD
 исправлены: значение имеет ненулевую начальную длину, а прямой read/write для
 TX запрещён.
 
-Сейчас транспорт считает пакеты и сохраняет заголовок последнего пакета, но
-ещё не разбирает время, погоду, уведомления и команды Chronos. Подробный журнал
-bring-up и следующие задачи: [`BLE_CHRONOS_BRINGUP.md`](BLE_CHRONOS_BRINGUP.md).
+Текущий transport считает пакеты, собирает Tseho Link frames и применяет
+время/UTC offset. Уведомления и музыка уже кодируются Android-стороной, но ещё
+не подключены к bounded model и StateSmith GUI часов. Подробности:
+[`GADGETBRIDGE_INTEGRATION_PLAN.md`](GADGETBRIDGE_INTEGRATION_PLAN.md) и
+[`GADGETBRIDGE_DEVELOPMENT.md`](GADGETBRIDGE_DEVELOPMENT.md).
 
 ### NOG_C
 

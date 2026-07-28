@@ -6,7 +6,7 @@ project(promicro_nrf52840_watch C ASM)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(WATCH_ENABLE_BLE "Enable the S140 BLE/Chronos transport" ON)
+option(WATCH_ENABLE_BLE "Enable the S140 BLE/Tseho Link transport" ON)
 set(NRF5_SDK_ROOT "${CMAKE_CURRENT_LIST_DIR}/external/nRF5_SDK_17.1.0_ddde560"
     CACHE PATH "Path to Nordic nRF5 SDK 17.1.0")
 
@@ -24,6 +24,7 @@ add_executable(watch_firmware
     src/gui/watch_text.c
     src/platform/clock_nrf52840.c
     src/platform/freestanding_memory.c
+    src/protocol/tseho_link.c
 )
 
 if(WATCH_ENABLE_BLE)
@@ -71,7 +72,7 @@ target_compile_definitions(watch_firmware PRIVATE
     $<$<BOOL:${WATCH_ENABLE_BLE}>:SOFTDEVICE_PRESENT>
 )
 
-target_compile_options(watch_firmware PRIVATE
+set(WATCH_COMMON_COMPILE_OPTIONS
     -mcpu=cortex-m4
     -mthumb
     -mfloat-abi=hard
@@ -87,6 +88,16 @@ target_compile_options(watch_firmware PRIVATE
     -Og
     -g3
 )
+
+target_compile_options(watch_firmware PRIVATE ${WATCH_COMMON_COMPILE_OPTIONS})
+
+add_library(tseho_link_compile_tests OBJECT
+    tests/tseho_link_test.c
+    src/protocol/tseho_link.c
+)
+target_include_directories(tseho_link_compile_tests PRIVATE include)
+target_compile_options(tseho_link_compile_tests
+    PRIVATE ${WATCH_COMMON_COMPILE_OPTIONS})
 
 target_link_options(watch_firmware PRIVATE
     -mcpu=cortex-m4

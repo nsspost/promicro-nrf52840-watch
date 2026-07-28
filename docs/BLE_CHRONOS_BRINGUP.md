@@ -1,5 +1,9 @@
 # BLE/Chronos bring-up
 
+> **Статус:** исторический журнал успешной проверки BLE/NUS. Chronos больше не
+> является целевой телефонной интеграцией; дальнейшая работа описана в
+> [`GADGETBRIDGE_INTEGRATION_PLAN.md`](GADGETBRIDGE_INTEGRATION_PLAN.md).
+
 Дата проверки: 2026-07-27
 
 ## Подтверждённая аппаратура
@@ -94,9 +98,9 @@ AB 00 03 FE 23 80
 Таким образом, advertising, connection, GATT discovery, CCCD subscription,
 notify и RX write подтверждены end-to-end.
 
-## Следующие задачи
+## Дальнейшее использование результата
 
-Полный поэтапный план находится в
-[`CHRONOS_INTEGRATION_PLAN.md`](CHRONOS_INTEGRATION_PLAN.md). Ближайшая задача:
-сохранить обезличенный RX trace реальной сессии, создать protocol fixtures и
-реализовать сборщик кадров независимо от SoftDevice и GUI.
+Этот bring-up остаётся доказательством работоспособности SoftDevice, GATT и
+NUS. Разбор пакетов Chronos не продолжается. Целевой поэтапный план находится
+в [`GADGETBRIDGE_INTEGRATION_PLAN.md`](GADGETBRIDGE_INTEGRATION_PLAN.md);
+ближайшая задача — ADR протокола Tseho Link и общие C/Android golden vectors.

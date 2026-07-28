@@ -31,6 +31,7 @@
   "scripts": {
     "build": "powershell -ExecutionPolicy Bypass -File scripts/build.ps1",
     "build:gui": "powershell -ExecutionPolicy Bypass -File scripts/build.ps1",
+    "test:protocol": "node protocol/tseho-link-v0/verify-vectors.mjs",
     "check:embedded": "powershell -ExecutionPolicy Bypass -File scripts/check-embedded-dependencies.ps1",
     "probe": "powershell -ExecutionPolicy Bypass -File scripts/probe.ps1",
     "flash": "powershell -ExecutionPolicy Bypass -File scripts/flash.ps1",

@@ -51,7 +51,7 @@ typedef struct {
     uint32_t ble_received_packets;
     uint32_t ble_received_bytes;
     uint32_t ble_last_packet_header;
-    uint32_t ble_chronos_sync_requests;
+    uint32_t ble_tx_notifications;
     uint32_t ble_scan_reports;
     int32_t ble_scan_last_rssi;
     uint32_t ble_scan_last_address;
@@ -153,7 +153,7 @@ int main(void)
     watch_debug_state.ble_received_packets = 0;
     watch_debug_state.ble_received_bytes = 0;
     watch_debug_state.ble_last_packet_header = 0;
-    watch_debug_state.ble_chronos_sync_requests = 0;
+    watch_debug_state.ble_tx_notifications = 0;
     watch_debug_state.ble_scan_reports = 0;
     watch_debug_state.ble_scan_last_rssi = 0;
     watch_debug_state.ble_scan_last_address = 0;
@@ -258,8 +258,8 @@ int main(void)
         watch_debug_state.ble_received_bytes = ble->received_bytes;
         watch_debug_state.ble_last_packet_header =
             ble->last_packet_header;
-        watch_debug_state.ble_chronos_sync_requests =
-            ble->chronos_sync_requests;
+        watch_debug_state.ble_tx_notifications =
+            ble->tx_notifications;
         watch_debug_state.ble_scan_reports = ble->scan_reports;
         watch_debug_state.ble_scan_last_rssi = ble->scan_last_rssi;
         watch_debug_state.ble_scan_last_address =

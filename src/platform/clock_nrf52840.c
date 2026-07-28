@@ -11,6 +11,7 @@
 
 #define RTC1_BASE        0x40011000u
 #define RTC1_TASKS_START REG32(RTC1_BASE + 0x000u)
+#define RTC1_TASKS_STOP  REG32(RTC1_BASE + 0x004u)
 #define RTC1_TASKS_CLEAR REG32(RTC1_BASE + 0x008u)
 #define RTC1_COUNTER     REG32(RTC1_BASE + 0x504u)
 #define RTC1_PRESCALER   REG32(RTC1_BASE + 0x508u)
@@ -42,6 +43,12 @@ void watch_clock_init(uint8_t hour, uint8_t minute, uint8_t second)
     }
 #endif
 
+    /*
+     * TIME_SET can arrive after the clock is already running. Nordic RTC
+     * configuration registers must not be rewritten while the peripheral is
+     * active; doing so made a phone time sync accelerate the clock wildly.
+     */
+    RTC1_TASKS_STOP = 1u;
     RTC1_TASKS_CLEAR = 1u;
     /* 32,768 Hz / (4095 + 1) = eight animation ticks per second. */
     RTC1_PRESCALER = 4095u;

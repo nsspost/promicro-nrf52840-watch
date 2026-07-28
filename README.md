@@ -1,11 +1,17 @@
 # ProMicro nRF52840 watch
 
+Целевым телефонным companion выбран Gadgetbridge. Chronos использовался только
+для проверки BLE/NUS и больше не определяет прикладной протокол часов. План:
+[`docs/GADGETBRIDGE_INTEGRATION_PLAN.md`](docs/GADGETBRIDGE_INTEGRATION_PLAN.md).
+
 На подключённой плате работает круглый GUI 240×240 на тестовых данных:
 11 экранов, semantic touch, guarded/critical lifecycle, журнал событий и
-блокирующее event preemption. BLE Nordic UART Service работает на S140:
-приложение Chronos подключается к `Tseho Watch`, подписывается на TX и
-передаёт пакеты в RX. Разбор времени, погоды и уведомлений ещё не реализован.
-Подробности: [`docs/FIRST_WATCH_SLICE.md`](docs/FIRST_WATCH_SLICE.md).
+блокирующее event preemption. На S140 собран собственный BLE GATT service
+Tseho Link с bounded C codec, handshake и синхронизацией времени. Отдельная
+ветка Gadgetbridge распознаёт `Tseho Watch`, передаёт время, уведомления и
+музыку и принимает батарею/команды плеера. Следующий шаг — сквозной тест с
+телефоном. Подробности:
+[`docs/GADGETBRIDGE_DEVELOPMENT.md`](docs/GADGETBRIDGE_DEVELOPMENT.md).
 
 В прошивке есть две встроенные шкурки: исходная цветная и новая строгая
 монохромная. Чтобы переключиться, нажмите на часы в верхней части главного
@@ -20,7 +26,10 @@
 - [`docs/PROJECT_DESCRIPTION.md`](docs/PROJECT_DESCRIPTION.md);
 - [`docs/CURRENT_STATE_AND_ROADMAP.md`](docs/CURRENT_STATE_AND_ROADMAP.md);
 - [`docs/BLE_CHRONOS_BRINGUP.md`](docs/BLE_CHRONOS_BRINGUP.md);
-- [`docs/CHRONOS_INTEGRATION_PLAN.md`](docs/CHRONOS_INTEGRATION_PLAN.md);
+- [`docs/CHRONOS_INTEGRATION_PLAN.md`](docs/CHRONOS_INTEGRATION_PLAN.md)
+  (архивный);
+- [`docs/GADGETBRIDGE_INTEGRATION_PLAN.md`](docs/GADGETBRIDGE_INTEGRATION_PLAN.md);
+- [`docs/GADGETBRIDGE_DEVELOPMENT.md`](docs/GADGETBRIDGE_DEVELOPMENT.md);
 - [`dependencies.json`](dependencies.json).
 
 ## Что уже есть
@@ -30,7 +39,8 @@
 - диагностическая прошивка без обращения к GPIO;
 - локально закреплённые GCC, CMake, Ninja и резервный OpenOCD;
 - SEGGER J-Link Commander/GDB Server для штатного Windows-драйвера J-LinkOB;
-- S140 advertising и Nordic UART Service, проверенные с Windows и Chronos;
+- S140 advertising и собственный Tseho Link GATT service;
+- C/Java codec с общими golden frames и development APK Gadgetbridge;
 - PowerShell-команды для probe/build/flash/GDB;
 - задачи VS Code.
 

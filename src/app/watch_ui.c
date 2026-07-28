@@ -36,7 +36,7 @@ typedef enum {
     ACTION_TOGGLE_SKIN
 } ui_action_t;
 
-static watch_ui_skin_t active_skin = WATCH_UI_SKIN_COLOR_CONTEXT;
+static watch_ui_skin_t active_skin = WATCH_UI_SKIN_STRICT_CONTEXT;
 
 static watch_strict_text_style_t strict_style_from_scale(uint8_t scale)
 {
@@ -1445,7 +1445,7 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
     ui->hold_progress = 0u;
     ui->command_phase = WATCH_UI_COMMAND_IDLE;
     ui->critical_phase = WATCH_UI_CRITICAL_IDLE;
-    ui->skin = WATCH_UI_SKIN_COLOR_CONTEXT;
+    ui->skin = WATCH_UI_SKIN_STRICT_CONTEXT;
     ui->command_demo_outcome = 0u;
     ui->critical_demo_outcome = 0u;
     ui->phase_started_at = 0u;
@@ -1603,7 +1603,7 @@ watch_ui_screen_t watch_ui_get_screen(const watch_ui_t *ui)
 
 watch_ui_skin_t watch_ui_get_skin(const watch_ui_t *ui)
 {
-    return (ui != NULL) ? ui->skin : WATCH_UI_SKIN_COLOR_CONTEXT;
+    return (ui != NULL) ? ui->skin : WATCH_UI_SKIN_STRICT_CONTEXT;
 }
 
 bool watch_ui_set_skin(watch_ui_t *ui, watch_ui_skin_t skin)

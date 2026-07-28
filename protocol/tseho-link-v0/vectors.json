@@ -1,0 +1,60 @@
+{
+  "format": "tseho-link-golden-vectors",
+  "formatVersion": 1,
+  "protocol": {
+    "major": 0,
+    "minor": 1,
+    "headerSize": 10,
+    "maxPayload": 384
+  },
+  "vectors": [
+    {
+      "id": "hello-watch-all-mvp-capabilities",
+      "type": 1,
+      "flags": 1,
+      "sequence": 1,
+      "payloadHex": "1f00000080011400",
+      "frameHex": "544c00010101010008001f00000080011400"
+    },
+    {
+      "id": "ready-empty",
+      "type": 2,
+      "flags": 0,
+      "sequence": 2,
+      "payloadHex": "",
+      "frameHex": "544c0001020002000000"
+    },
+    {
+      "id": "time-set-utc-plus-three",
+      "type": 16,
+      "flags": 0,
+      "sequence": 4660,
+      "payloadHex": "78563412b4000100",
+      "frameHex": "544c000110003412080078563412b4000100"
+    },
+    {
+      "id": "battery-full-charging-3300mv",
+      "type": 32,
+      "flags": 0,
+      "sequence": 2,
+      "payloadHex": "6401e40c",
+      "frameHex": "544c00012000020004006401e40c"
+    },
+    {
+      "id": "notification-remove",
+      "type": 49,
+      "flags": 0,
+      "sequence": 3,
+      "payloadHex": "efcdab89",
+      "frameHex": "544c0001310003000400efcdab89"
+    },
+    {
+      "id": "media-next-ack-required",
+      "type": 67,
+      "flags": 1,
+      "sequence": 256,
+      "payloadHex": "04",
+      "frameHex": "544c000143010001010004"
+    }
+  ]
+}

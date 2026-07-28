@@ -1,5 +1,10 @@
 # План интеграции Chronos
 
+> **Архивный документ.** 2026-07-27 принято решение перейти на Gadgetbridge и
+> открытый протокол Tseho Link. Прикладная интеграция Chronos не продолжается.
+> Подтверждённый BLE/NUS bring-up сохраняется как диагностический baseline.
+> Актуальный план: [`GADGETBRIDGE_INTEGRATION_PLAN.md`](GADGETBRIDGE_INTEGRATION_PLAN.md).
+
 Дата: 2026-07-27
 Статус: план реализации после успешного BLE/NUS bring-up
 

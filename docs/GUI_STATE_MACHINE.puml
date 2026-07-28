@@ -1,0 +1,75 @@
+@startuml
+title Tseho Watch GUI state machine v0
+
+skinparam state {
+  BackgroundColor #111111
+  BorderColor #DDDDDD
+  FontColor #EEEEEE
+}
+skinparam ArrowColor #DDDDDD
+skinparam BackgroundColor #000000
+
+[*] --> Home
+
+state Home {
+  [*] --> StrictWatchface
+  StrictWatchface : default debug skin
+  ColorWatchface : legacy first prototype
+  StrictWatchface --> ColorWatchface : toggleSkin
+  ColorWatchface --> StrictWatchface : toggleSkin
+}
+
+Home --> DeviceList : tap devices
+Home --> EventJournal : tap events
+Home --> Diagnostic : tap time area
+
+DeviceList --> DeviceOverview : tap device
+DeviceOverview --> ParameterList : tap parameters
+ParameterList --> MetricDetail : tap metric
+DeviceOverview --> ControlList : tap controls
+ControlList --> CommandStatus : tap command
+ControlList --> CriticalRequest : hold critical action
+
+EventJournal --> EventDetail : tap event
+Home --> EventDetail : present blocking event
+DeviceList --> EventDetail : present blocking event
+DeviceOverview --> EventDetail : present blocking event
+ParameterList --> EventDetail : present blocking event
+MetricDetail --> EventDetail : present blocking event
+ControlList --> EventDetail : present blocking event
+CommandStatus --> EventDetail : present blocking event
+CriticalRequest --> EventDetail : present blocking event
+Diagnostic --> EventDetail : present blocking event
+
+CommandStatus --> CommandStatus : submit / sending
+CommandStatus --> CommandStatus : result success
+CommandStatus --> CommandStatus : result rejected
+CommandStatus --> CommandStatus : result timeout
+
+CriticalRequest --> CriticalRequest : submit / waiting
+CriticalRequest --> CriticalRequest : result approved
+CriticalRequest --> CriticalRequest : result denied
+
+DeviceList --> Home : back
+DeviceOverview --> DeviceList : back
+ParameterList --> DeviceOverview : back
+MetricDetail --> ParameterList : back
+ControlList --> DeviceOverview : back
+CommandStatus --> ControlList : back
+CriticalRequest --> ControlList : back
+EventJournal --> Home : back
+EventDetail --> EventJournal : back or ack
+Diagnostic --> Home : back
+
+note right of Home
+  The default visual variant is the second
+  strict/context watchface. The color-context
+  prototype remains available through Diagnostic.
+end note
+
+note bottom
+  Runtime implementation currently lives in watch_ui.c:
+  screen enum, small navigation stack, semantic hit targets,
+  and lifecycle phases for command/critical flows.
+end note
+@enduml

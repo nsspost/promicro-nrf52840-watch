@@ -9,21 +9,23 @@
 #include "ble_gatts.h"
 #include "nrf_error.h"
 #include "nrf_sdm.h"
+#include "watch/clock.h"
+#include "watch/tseho_link.h"
 
 #define WATCH_BLE_RAM_START       0x20004000u
 #define WATCH_BLE_EVENT_BUFFER    256u
 #define WATCH_BLE_CONN_TAG        1u
 #define WATCH_BLE_VALUE_MAX_LEN   20u
 
-#define WATCH_NUS_SERVICE_UUID    0x0001u
-#define WATCH_NUS_RX_UUID         0x0002u
-#define WATCH_NUS_TX_UUID         0x0003u
+#define WATCH_LINK_SERVICE_UUID   0x0001u
+#define WATCH_LINK_RX_UUID        0x0002u
+#define WATCH_LINK_TX_UUID        0x0003u
 
 static const uint8_t watch_device_name[] = "Tseho Watch";
-static const ble_uuid128_t watch_nus_base_uuid = {
+static const ble_uuid128_t watch_link_base_uuid = {
     .uuid128 = {
-        0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0,
-        0x93, 0xF3, 0xA3, 0xB5, 0x00, 0x00, 0x40, 0x6E
+        0x2E, 0x73, 0xB5, 0xF0, 0x91, 0x6C, 0xD1, 0xA2,
+        0x8B, 0x4E, 0xF7, 0x34, 0x00, 0x00, 0x5C, 0x7A
     }
 };
 
@@ -36,18 +38,21 @@ static uint8_t watch_adv_data[] = {
 
 static uint8_t watch_scan_response[] = {
     17u, BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_COMPLETE,
-    0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0,
-    0x93, 0xF3, 0xA3, 0xB5, 0x01, 0x00, 0x40, 0x6E
+    0x2E, 0x73, 0xB5, 0xF0, 0x91, 0x6C, 0xD1, 0xA2,
+    0x8B, 0x4E, 0xF7, 0x34, 0x01, 0x00, 0x5C, 0x7A
 };
 
 static __attribute__((aligned(4))) uint8_t watch_ble_event[WATCH_BLE_EVENT_BUFFER];
 static watch_ble_status_t watch_ble_status;
-static ble_gatts_char_handles_t watch_nus_rx_handles;
-static ble_gatts_char_handles_t watch_nus_tx_handles;
+static ble_gatts_char_handles_t watch_link_rx_handles;
+static ble_gatts_char_handles_t watch_link_tx_handles;
 static uint16_t watch_conn_handle = BLE_CONN_HANDLE_INVALID;
 static uint8_t watch_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;
-static uint8_t watch_nus_uuid_type;
-static bool watch_chronos_request_pending;
+static uint8_t watch_link_uuid_type;
+static bool watch_tx_subscribed;
+static bool watch_hello_pending;
+static uint16_t watch_link_tx_sequence;
+static tseho_link_parser_t watch_link_parser;
 
 static void watch_softdevice_fault(uint32_t id, uint32_t pc, uint32_t info)
 {
@@ -75,15 +80,15 @@ static void watch_open_security(ble_gap_conn_sec_mode_t *mode)
     mode->lv = 1u;
 }
 
-static bool watch_nus_add_characteristic(uint16_t service_handle,
-                                         uint16_t uuid_value,
-                                         bool rx,
-                                         ble_gatts_char_handles_t *handles)
+static bool watch_link_add_characteristic(uint16_t service_handle,
+                                          uint16_t uuid_value,
+                                          bool rx,
+                                          ble_gatts_char_handles_t *handles)
 {
     uint8_t initial_value = 0u;
     ble_uuid_t uuid = {
         .uuid = uuid_value,
-        .type = watch_nus_uuid_type
+        .type = watch_link_uuid_type
     };
     ble_gatts_attr_md_t value_md = {0};
     ble_gatts_attr_t value_attr = {0};
@@ -122,17 +127,17 @@ static bool watch_nus_add_characteristic(uint16_t service_handle,
         rx ? 7u : 8u);
 }
 
-static bool watch_nus_init(void)
+static bool watch_link_init(void)
 {
     ble_uuid_t service_uuid = {0};
     uint16_t service_handle;
 
-    if (!watch_ble_check(sd_ble_uuid_vs_add(&watch_nus_base_uuid,
-                                            &watch_nus_uuid_type), 5u)) {
+    if (!watch_ble_check(sd_ble_uuid_vs_add(&watch_link_base_uuid,
+                                            &watch_link_uuid_type), 5u)) {
         return false;
     }
-    service_uuid.type = watch_nus_uuid_type;
-    service_uuid.uuid = WATCH_NUS_SERVICE_UUID;
+    service_uuid.type = watch_link_uuid_type;
+    service_uuid.uuid = WATCH_LINK_SERVICE_UUID;
     if (!watch_ble_check(
             sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
                                      &service_uuid,
@@ -140,14 +145,112 @@ static bool watch_nus_init(void)
             6u)) {
         return false;
     }
-    if (!watch_nus_add_characteristic(service_handle,
-                                      WATCH_NUS_RX_UUID, true,
-                                      &watch_nus_rx_handles)) {
+    if (!watch_link_add_characteristic(service_handle,
+                                       WATCH_LINK_RX_UUID, true,
+                                       &watch_link_rx_handles)) {
         return false;
     }
-    return watch_nus_add_characteristic(service_handle,
-                                        WATCH_NUS_TX_UUID, false,
-                                        &watch_nus_tx_handles);
+    return watch_link_add_characteristic(service_handle,
+                                         WATCH_LINK_TX_UUID, false,
+                                         &watch_link_tx_handles);
+}
+
+static bool watch_link_notify(uint8_t type,
+                              uint8_t flags,
+                              const uint8_t *payload,
+                              uint16_t payload_length)
+{
+    uint8_t frame[WATCH_BLE_VALUE_MAX_LEN];
+    size_t frame_length = 0u;
+    uint16_t hvx_length;
+    ble_gatts_hvx_params_t params = {0};
+
+    if (!watch_tx_subscribed ||
+        (watch_conn_handle == BLE_CONN_HANDLE_INVALID)) {
+        return false;
+    }
+    if (tseho_link_encode(type, flags, watch_link_tx_sequence,
+                          payload, payload_length,
+                          frame, sizeof(frame), &frame_length) !=
+        TSEHO_LINK_ENCODE_OK) {
+        return false;
+    }
+
+    hvx_length = (uint16_t)frame_length;
+    params.handle = watch_link_tx_handles.value_handle;
+    params.type = BLE_GATT_HVX_NOTIFICATION;
+    params.offset = 0u;
+    params.p_len = &hvx_length;
+    params.p_data = frame;
+    uint32_t result = sd_ble_gatts_hvx(watch_conn_handle, &params);
+    if (result == NRF_SUCCESS) {
+        watch_link_tx_sequence++;
+        watch_ble_status.tx_notifications++;
+        return true;
+    }
+    if (result != NRF_ERROR_RESOURCES) {
+        watch_ble_status.error = (17u << 24) | result;
+    }
+    return false;
+}
+
+static bool watch_link_send_hello(void)
+{
+    uint8_t payload[8];
+    uint32_t capabilities =
+        TSEHO_LINK_CAP_TIME |
+        TSEHO_LINK_CAP_WATCH_BATTERY |
+        TSEHO_LINK_CAP_NOTIFICATIONS |
+        TSEHO_LINK_CAP_MEDIA_INFO |
+        TSEHO_LINK_CAP_MEDIA_CONTROL;
+
+    tseho_link_write_u32_le(&payload[0], capabilities);
+    tseho_link_write_u16_le(&payload[4], TSEHO_LINK_MAX_PAYLOAD);
+    tseho_link_write_u16_le(&payload[6], WATCH_BLE_VALUE_MAX_LEN);
+    return watch_link_notify(TSEHO_LINK_MSG_HELLO,
+                             TSEHO_LINK_FLAG_ACK_REQUIRED,
+                             payload, sizeof(payload));
+}
+
+static void watch_link_apply_time(const uint8_t *payload,
+                                  uint16_t payload_length)
+{
+    if (payload_length != 8u) {
+        return;
+    }
+
+    uint32_t utc_day_seconds =
+        tseho_link_read_u32_le(payload) % 86400u;
+    int16_t offset_minutes =
+        (int16_t)tseho_link_read_u16_le(&payload[4]);
+    int32_t local_seconds =
+        (int32_t)utc_day_seconds + ((int32_t)offset_minutes * 60);
+
+    while (local_seconds < 0) {
+        local_seconds += 86400;
+    }
+    while (local_seconds >= 86400) {
+        local_seconds -= 86400;
+    }
+    watch_clock_init((uint8_t)((uint32_t)local_seconds / 3600u),
+                     (uint8_t)(((uint32_t)local_seconds % 3600u) / 60u),
+                     (uint8_t)((uint32_t)local_seconds % 60u));
+}
+
+static void watch_link_handle_frame(
+    const tseho_link_frame_view_t *frame,
+    void *context)
+{
+    (void)context;
+
+    if (frame->version_major != TSEHO_LINK_VERSION_MAJOR) {
+        return;
+    }
+    if (frame->type == TSEHO_LINK_MSG_READY) {
+        watch_ble_status.state = WATCH_BLE_STATE_READY;
+    } else if (frame->type == TSEHO_LINK_MSG_TIME_SET) {
+        watch_link_apply_time(frame->payload, frame->payload_length);
+    }
 }
 
 static bool watch_advertising_start(bool configure)
@@ -193,29 +296,6 @@ static bool watch_advertising_start(bool configure)
     return true;
 }
 
-static void watch_chronos_sync_request(void)
-{
-    static const uint8_t packet[] = {
-        0xABu, 0x00u, 0x03u, 0xFEu, 0x23u, 0x80u
-    };
-    uint16_t length = sizeof(packet);
-    ble_gatts_hvx_params_t params = {
-        .handle = watch_nus_tx_handles.value_handle,
-        .type = BLE_GATT_HVX_NOTIFICATION,
-        .offset = 0u,
-        .p_len = &length,
-        .p_data = packet
-    };
-    uint32_t result = sd_ble_gatts_hvx(watch_conn_handle, &params);
-    if (result == NRF_SUCCESS) {
-        watch_ble_status.chronos_sync_requests++;
-        watch_chronos_request_pending = false;
-        watch_ble_status.state = WATCH_BLE_STATE_CHRONOS_READY;
-    } else if (result != NRF_ERROR_RESOURCES) {
-        watch_ble_status.error = (14u << 24) | result;
-    }
-}
-
 bool watch_ble_init(void)
 {
     nrf_clock_lf_cfg_t clock_cfg = {
@@ -237,7 +317,10 @@ bool watch_ble_init(void)
     watch_ble_status = (watch_ble_status_t){0};
     watch_conn_handle = BLE_CONN_HANDLE_INVALID;
     watch_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;
-    watch_chronos_request_pending = false;
+    watch_tx_subscribed = false;
+    watch_hello_pending = false;
+    watch_link_tx_sequence = 1u;
+    tseho_link_parser_init(&watch_link_parser);
 
     if (!watch_ble_check(sd_softdevice_enable(&clock_cfg,
                                                watch_softdevice_fault), 1u)) {
@@ -283,7 +366,7 @@ bool watch_ble_init(void)
     if (!watch_ble_check(sd_ble_gap_ppcp_set(&conn_params), 13u)) {
         return false;
     }
-    if (!watch_nus_init()) {
+    if (!watch_link_init()) {
         return false;
     }
     if (!watch_advertising_start(true)) {
@@ -303,7 +386,9 @@ static void watch_ble_process_event(const ble_evt_t *event)
         (void)sd_ble_gatts_sys_attr_set(watch_conn_handle, NULL, 0u, 0u);
     } else if (event_id == BLE_GAP_EVT_DISCONNECTED) {
         watch_conn_handle = BLE_CONN_HANDLE_INVALID;
-        watch_chronos_request_pending = false;
+        watch_tx_subscribed = false;
+        watch_hello_pending = false;
+        tseho_link_parser_init(&watch_link_parser);
         (void)watch_advertising_start(false);
     } else if (event_id == BLE_GAP_EVT_SEC_PARAMS_REQUEST) {
         (void)sd_ble_gap_sec_params_reply(
@@ -315,13 +400,13 @@ static void watch_ble_process_event(const ble_evt_t *event)
     } else if (event_id == BLE_GATTS_EVT_WRITE) {
         const ble_gatts_evt_write_t *write =
             &event->evt.gatts_evt.params.write;
-        if ((write->handle == watch_nus_tx_handles.cccd_handle) &&
+        if ((write->handle == watch_link_tx_handles.cccd_handle) &&
             (write->len == 2u)) {
-            watch_chronos_request_pending = (write->data[0] & 1u) != 0u;
-            if (!watch_chronos_request_pending) {
-                watch_ble_status.state = WATCH_BLE_STATE_CONNECTED;
-            }
-        } else if (write->handle == watch_nus_rx_handles.value_handle) {
+            watch_tx_subscribed = (write->data[0] & 1u) != 0u;
+            watch_hello_pending = watch_tx_subscribed;
+            watch_ble_status.state = watch_tx_subscribed ?
+                WATCH_BLE_STATE_SUBSCRIBED : WATCH_BLE_STATE_CONNECTED;
+        } else if (write->handle == watch_link_rx_handles.value_handle) {
             watch_ble_status.received_packets++;
             watch_ble_status.received_bytes += write->len;
             if (write->len >= 4u) {
@@ -331,6 +416,12 @@ static void watch_ble_process_event(const ble_evt_t *event)
                     ((uint32_t)write->data[2] << 8) |
                     write->data[3];
             }
+            (void)tseho_link_parser_feed(
+                &watch_link_parser,
+                write->data,
+                write->len,
+                watch_link_handle_frame,
+                NULL);
         }
     }
 }
@@ -352,8 +443,9 @@ void watch_ble_poll(void)
         (watch_ble_status.state != WATCH_BLE_STATE_ERROR)) {
         watch_ble_status.error = (15u << 24) | result;
     }
-    if (watch_chronos_request_pending) {
-        watch_chronos_sync_request();
+
+    if (watch_hello_pending && watch_link_send_hello()) {
+        watch_hello_pending = false;
     }
 }
 
