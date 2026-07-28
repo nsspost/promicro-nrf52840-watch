@@ -110,6 +110,8 @@ typedef struct {
     uint8_t critical_demo_outcome;
     watch_ui_phone_status_t phone;
     watch_ui_media_status_t media;
+    uint8_t media_command;
+    bool media_command_pending;
     uint32_t phase_started_at;
     watch_time_t displayed_time;
     bool initialized;
@@ -131,6 +133,7 @@ bool watch_ui_set_phone_status(watch_ui_t *ui,
                                watch_ui_phone_status_t status);
 bool watch_ui_set_media_status(watch_ui_t *ui,
                                const watch_ui_media_status_t *status);
+bool watch_ui_take_media_command(watch_ui_t *ui, uint8_t *command);
 
 /*
  * Deterministic helpers for GDB and manufacturing checks. They exercise the

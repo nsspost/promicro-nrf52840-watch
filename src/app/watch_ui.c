@@ -34,7 +34,10 @@ typedef enum {
     ACTION_ACK_EVENT,
     ACTION_OPEN_DIAGNOSTIC,
     ACTION_TOGGLE_SKIN,
-    ACTION_OPEN_MEDIA
+    ACTION_OPEN_MEDIA,
+    ACTION_MEDIA_PREVIOUS,
+    ACTION_MEDIA_PLAY_PAUSE,
+    ACTION_MEDIA_NEXT
 } ui_action_t;
 
 static watch_ui_skin_t active_skin = WATCH_UI_SKIN_STRICT_CONTEXT;
@@ -1314,6 +1317,9 @@ static void draw_media_screen(watch_ui_t *ui)
     gno_draw_rect(ui->graphics, 28, 199, 52, 30, color_info());
     gno_draw_rect(ui->graphics, 94, 199, 52, 30, color_accent());
     gno_draw_rect(ui->graphics, 160, 199, 52, 30, color_info());
+    add_hit(ui, 28, 199, 52, 30, ACTION_MEDIA_PREVIOUS, 3u, false);
+    add_hit(ui, 94, 199, 52, 30, ACTION_MEDIA_PLAY_PAUSE, 0u, false);
+    add_hit(ui, 160, 199, 52, 30, ACTION_MEDIA_NEXT, 4u, false);
     watch_draw_text(ui->graphics, 45, 207, "|<", 1u, color_text());
     watch_draw_text(ui->graphics, 111, 207, media->state == 1u ? "||" : ">",
                     1u, color_text());
@@ -1505,6 +1511,13 @@ static void dispatch_action(watch_ui_t *ui,
             break;
         case ACTION_OPEN_MEDIA:
             navigate_to(ui, WATCH_UI_SCREEN_MEDIA);
+            break;
+        case ACTION_MEDIA_PREVIOUS:
+        case ACTION_MEDIA_PLAY_PAUSE:
+        case ACTION_MEDIA_NEXT:
+            ui->media_command = (uint8_t)argument;
+            ui->media_command_pending = true;
+            ui->needs_redraw = true;
             break;
         case ACTION_TOGGLE_SKIN:
             ui->skin =
@@ -1771,6 +1784,16 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
         }
         if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->needs_redraw = true;
     }
+    return true;
+}
+
+bool watch_ui_take_media_command(watch_ui_t *ui, uint8_t *command)
+{
+    if ((ui == NULL) || (command == NULL) || !ui->media_command_pending) {
+        return false;
+    }
+    *command = ui->media_command;
+    ui->media_command_pending = false;
     return true;
 }
 

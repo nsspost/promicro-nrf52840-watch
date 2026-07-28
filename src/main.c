@@ -400,6 +400,13 @@ int main(void)
             }
         }
 
+        uint8_t media_command;
+        if (watch_ui_take_media_command(&watch_ui_runtime, &media_command)) {
+            if (!watch_ble_send_media_command(media_command)) {
+                watch_debug_state.ble_error = 0x4D454449u; /* MEDI */
+            }
+        }
+
         watch_delay_ms(20u);
     }
 }

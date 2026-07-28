@@ -519,3 +519,9 @@ const watch_ble_media_status_t *watch_ble_get_media_status(void)
 {
     return &watch_ble_media;
 }
+
+bool watch_ble_send_media_command(uint8_t command)
+{
+    return watch_link_notify(TSEHO_LINK_MSG_MEDIA_COMMAND, 0u,
+                             &command, 1u);
+}
