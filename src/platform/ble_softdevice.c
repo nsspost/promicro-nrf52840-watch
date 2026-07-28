@@ -402,8 +402,16 @@ static void watch_ble_process_event(const ble_evt_t *event)
             &event->evt.gatts_evt.params.write;
         if ((write->handle == watch_link_tx_handles.cccd_handle) &&
             (write->len == 2u)) {
+            bool was_subscribed = watch_tx_subscribed;
             watch_tx_subscribed = (write->data[0] & 1u) != 0u;
-            watch_hello_pending = watch_tx_subscribed;
+            /* Gadgetbridge may write the CCCD more than once while it
+             * rebuilds its notification transaction.  HELLO belongs to the
+             * subscription edge, not to every identical CCCD write. */
+            if (watch_tx_subscribed && !was_subscribed) {
+                watch_hello_pending = true;
+            } else if (!watch_tx_subscribed) {
+                watch_hello_pending = false;
+            }
             watch_ble_status.state = watch_tx_subscribed ?
                 WATCH_BLE_STATE_SUBSCRIBED : WATCH_BLE_STATE_CONNECTED;
         } else if (write->handle == watch_link_rx_handles.value_handle) {
