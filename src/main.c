@@ -116,6 +116,25 @@ static void watch_show_boot_diagnostic(gno_context_t *graphics,
                     GNO_RGB(220, 225, 230));
 }
 
+static watch_ui_phone_state_t watch_phone_state_from_ble(uint32_t ble_state)
+{
+    switch (ble_state) {
+        case WATCH_BLE_STATE_ADVERTISING:
+            return WATCH_UI_PHONE_ADVERTISING;
+        case WATCH_BLE_STATE_CONNECTED:
+            return WATCH_UI_PHONE_CONNECTED;
+        case WATCH_BLE_STATE_SUBSCRIBED:
+            return WATCH_UI_PHONE_SUBSCRIBED;
+        case WATCH_BLE_STATE_READY:
+            return WATCH_UI_PHONE_READY;
+        case WATCH_BLE_STATE_ERROR:
+            return WATCH_UI_PHONE_ERROR;
+        case WATCH_BLE_STATE_OFF:
+        default:
+            return WATCH_UI_PHONE_OFF;
+    }
+}
+
 int main(void)
 {
     if (watch_debug_state.magic != WATCH_DEBUG_MAGIC) {
@@ -264,6 +283,14 @@ int main(void)
         watch_debug_state.ble_scan_last_rssi = ble->scan_last_rssi;
         watch_debug_state.ble_scan_last_address =
             ble->scan_last_address;
+        (void)watch_ui_set_phone_status(
+            &watch_ui_runtime,
+            (watch_ui_phone_status_t) {
+                .state = watch_phone_state_from_ble(ble->state),
+                .connections = ble->connections,
+                .received_packets = ble->received_packets,
+                .tx_notifications = ble->tx_notifications
+            });
         watch_debug_state.heartbeat++;
         time = watch_clock_get();
         watch_debug_state.clock_hour = time.hour;

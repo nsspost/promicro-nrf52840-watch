@@ -361,6 +361,44 @@ static void format_tenths(int16_t value, char text[12])
     text[length] = '\0';
 }
 
+static void format_percent_from_tenths(int16_t value, char text[6])
+{
+    uint16_t percent = 0u;
+    uint8_t length = 0u;
+
+    if (value > 0) {
+        percent = (uint16_t)(value / 10);
+    }
+    if (percent > 100u) {
+        percent = 100u;
+    }
+
+    append_unsigned(text, &length, percent);
+    text[length++] = '%';
+    text[length] = '\0';
+}
+
+static const char *phone_state_label(watch_ui_phone_state_t state)
+{
+    switch (state) {
+        case WATCH_UI_PHONE_ADVERTISING: return "ADV";
+        case WATCH_UI_PHONE_CONNECTED: return "CON";
+        case WATCH_UI_PHONE_SUBSCRIBED: return "SUB";
+        case WATCH_UI_PHONE_READY: return "READY";
+        case WATCH_UI_PHONE_ERROR: return "ERR";
+        case WATCH_UI_PHONE_OFF:
+        default:
+            return "OFF";
+    }
+}
+
+static bool phone_state_online(watch_ui_phone_state_t state)
+{
+    return state == WATCH_UI_PHONE_CONNECTED ||
+           state == WATCH_UI_PHONE_SUBSCRIBED ||
+           state == WATCH_UI_PHONE_READY;
+}
+
 static void draw_metric_value(gno_context_t *graphics,
                               int center_x,
                               int y,
@@ -508,6 +546,9 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
 {
     gno_context_t *graphics = ui->graphics;
     const watch_ui_device_t *device = &ui->model.devices[0];
+    const watch_ui_device_t *local = &ui->model.devices[2];
+    char battery_text[6];
+    char packet_text[12];
     char clock_text[6] = {
         (char)('0' + (time.hour / 10u)),
         (char)('0' + (time.hour % 10u)),
@@ -517,17 +558,37 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
         '\0'
     };
 
+    format_percent_from_tenths(local->metrics[0].value_tenths, battery_text);
+
     text_center(graphics, 120, 5, clock_text, 9u, color_text());
     gno_fill_rect(graphics, 26, 83, 188, 2, color_line());
 
     watch_strict_draw_icon(graphics, 34, 87,
                            WATCH_STRICT_ICON_BATTERY, color_text());
-    watch_draw_text(graphics, 68, 95, "78%", 4u, color_text());
+    watch_draw_text(graphics, 68, 95, battery_text, 4u, color_text());
     gno_fill_rect(graphics, 119, 88, 2, 31, color_line());
     watch_strict_draw_icon(graphics, 126, 87,
                            WATCH_STRICT_ICON_CLOUD, color_text());
-    watch_draw_text(graphics, 160, 95, "18", 4u, color_text());
-    gno_draw_rect(graphics, 190, 95, 5, 5, color_text());
+    watch_draw_text(graphics, 160, 92,
+                    phone_state_label(ui->phone.state), 3u,
+                    phone_state_online(ui->phone.state) ?
+                    color_text() : color_muted());
+    {
+        uint8_t length = 0u;
+        uint32_t packets =
+            ui->phone.received_packets + ui->phone.tx_notifications;
+        if (packets > 999u) {
+            packets = 999u;
+        }
+        append_unsigned(packet_text, &length, (uint16_t)packets);
+        packet_text[length] = '\0';
+    }
+    watch_draw_text(graphics, 160, 112, packet_text, 1u, color_muted());
+    if (ui->phone.state == WATCH_UI_PHONE_READY) {
+        gno_fill_rect(graphics, 190, 95, 5, 5, color_text());
+    } else {
+        gno_draw_rect(graphics, 190, 95, 5, 5, color_muted());
+    }
 
     gno_fill_rect(graphics, 26, 125, 188, 2, color_line());
     if (device->online) {
@@ -1448,6 +1509,12 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
     ui->skin = WATCH_UI_SKIN_STRICT_CONTEXT;
     ui->command_demo_outcome = 0u;
     ui->critical_demo_outcome = 0u;
+    ui->phone = (watch_ui_phone_status_t) {
+        .state = WATCH_UI_PHONE_OFF,
+        .connections = 0u,
+        .received_packets = 0u,
+        .tx_notifications = 0u
+    };
     ui->phase_started_at = 0u;
     ui->displayed_time = (watch_time_t) {
         .hour = 0xFFu,
@@ -1616,6 +1683,27 @@ bool watch_ui_set_skin(watch_ui_t *ui, watch_ui_skin_t skin)
     active_skin = skin;
     ui->needs_redraw = true;
     return watch_ui_update(ui, watch_clock_get());
+}
+
+bool watch_ui_set_phone_status(watch_ui_t *ui,
+                               watch_ui_phone_status_t status)
+{
+    if (ui == NULL || !ui->initialized ||
+        status.state > WATCH_UI_PHONE_ERROR) {
+        return false;
+    }
+
+    if (ui->phone.state != status.state ||
+        ui->phone.connections != status.connections ||
+        ui->phone.received_packets != status.received_packets ||
+        ui->phone.tx_notifications != status.tx_notifications) {
+        ui->phone = status;
+        if (ui->screen == WATCH_UI_SCREEN_HOME_CONTEXT ||
+            ui->screen == WATCH_UI_SCREEN_DIAGNOSTIC) {
+            ui->needs_redraw = true;
+        }
+    }
+    return true;
 }
 
 static watch_time_t add_test_ticks(watch_time_t time, uint16_t ticks)

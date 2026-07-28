@@ -22,6 +22,7 @@ state Home {
 Home --> DeviceList : tap devices
 Home --> EventJournal : tap events
 Home --> Diagnostic : tap time area
+Home --> Home : phoneStatusChanged / redraw watchface status
 
 DeviceList --> DeviceOverview : tap device
 DeviceOverview --> ParameterList : tap parameters
@@ -65,6 +66,8 @@ note right of Home
   The default visual variant is the second
   strict/context watchface. The color-context
   prototype remains available through Diagnostic.
+  The watchface consumes the normalized phone
+  link status and does not know the BLE backend.
 end note
 
 note bottom

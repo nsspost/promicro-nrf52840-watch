@@ -1,7 +1,7 @@
 param(
     [string]$ProbeId = "",
     [string]$Frequency = "1m",
-    [int]$DebugWords = 40
+    [int]$DebugBytes = 160
 )
 
 . (Join-Path $PSScriptRoot "pyocd-common.ps1")
@@ -22,7 +22,7 @@ $commands = @(
     "-t", $script:DefaultTarget,
     "-f", $Frequency,
     "-M", "attach",
-    "-c", ("read32 {0} {1}" -f (Format-WatchAddress $debugState), $DebugWords),
+    "-c", ("read32 {0} {1}" -f (Format-WatchAddress $debugState), $DebugBytes),
     "-c", ("read32 {0} 8" -f (Format-WatchAddress $bleStatus)),
     "-c", "continue"
 )
