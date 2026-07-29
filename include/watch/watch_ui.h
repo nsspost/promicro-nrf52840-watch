@@ -74,6 +74,7 @@ typedef struct {
     uint32_t position_s;
     char artist[49];
     char track[97];
+    char source_app[33];
     uint32_t revision;
 } watch_ui_media_status_t;
 

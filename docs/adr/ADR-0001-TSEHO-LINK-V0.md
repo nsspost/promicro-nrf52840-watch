@@ -184,6 +184,17 @@ u8  text[artist_length + album_length + track_length]
 
 Пределы: artist 48, album 48, track 96 байт.
 
+После трёх строк может присутствовать необязательное поле источника:
+
+```text
+u8  source_app_length
+u8  source_app[source_app_length]
+```
+
+`source_app` — отображаемое Android-имя владельца активной media session,
+например `Яндекс Музыка`. Его отсутствие означает fallback `МУЗЫКА`; старые
+реализации игнорируют этот хвост payload.
+
 `MEDIA_STATE`, 8 байт:
 
 ```text
@@ -253,4 +264,3 @@ u32 position_seconds
 - truncated frame с продолжением;
 - UTF-8 boundary tests на уровне payload codec;
 - одинаковый результат C и Android implementations.
-

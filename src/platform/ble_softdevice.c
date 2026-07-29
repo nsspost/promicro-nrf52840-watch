@@ -275,6 +275,15 @@ static void watch_link_apply_media_info(const uint8_t *payload, uint16_t length)
     offset = (uint16_t)(offset + album);
     watch_link_copy_text(watch_ble_media.track, sizeof(watch_ble_media.track),
                          &payload[offset], track);
+    offset = (uint16_t)(offset + track);
+    watch_ble_media.source_app[0] = '\0';
+    if (offset < length) {
+        uint8_t source_app = payload[offset++];
+        if ((uint32_t)offset + source_app > length) return;
+        watch_link_copy_text(watch_ble_media.source_app,
+                             sizeof(watch_ble_media.source_app),
+                             &payload[offset], source_app);
+    }
     ++watch_ble_media.revision;
 }
 

@@ -38,6 +38,18 @@ Bonding временно выключен с обеих сторон. Это д�
 
 ## Сборка
 
+Основной способ сборки теперь зафиксирован в скрипте проекта:
+
+```powershell
+npm run build:gadgetbridge
+npm run install:gadgetbridge
+```
+
+Первый скрипт выставляет `JAVA_HOME` для JDK 21+ и `ANDROID_HOME`, запускает
+тест Tseho Link и создаёт development APK. Второй устанавливает уже собранный
+APK через `adb`. Portable Temurin 17 в этой среде лежит в
+`D:\devtools\temurin21`; системная Java 8 для этой сборки не используется.
+
 Локально установлены portable Temurin 21 и Android SDK. Из каталога
 `external/Gadgetbridge`:
 
@@ -76,4 +88,3 @@ sha256: 17B31FB5B7693112023EAE75A07DCD8B369A6B244739777757A3F479BC9CD562
    - растут `ble_received_packets` и `ble_received_bytes`.
 5. Изменить время/часовой пояс телефона и проверить часы.
 6. Только после этого подключать модель уведомлений и экран музыки в firmware.
-

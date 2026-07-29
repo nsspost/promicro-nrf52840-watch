@@ -42,6 +42,8 @@
     "reset:watch": "powershell -ExecutionPolicy Bypass -File scripts/reset-pyocd.ps1",
     "diag:watch": "powershell -ExecutionPolicy Bypass -File scripts/diag-pyocd.ps1",
     "log:gadgetbridge": "powershell -ExecutionPolicy Bypass -File scripts/gb-log.ps1",
+    "build:gadgetbridge": "powershell -ExecutionPolicy Bypass -File scripts/build-gadgetbridge.ps1",
+    "install:gadgetbridge": "powershell -ExecutionPolicy Bypass -File scripts/install-gadgetbridge.ps1",
     "verify-running": "powershell -ExecutionPolicy Bypass -File scripts/verify-running.ps1",
     "verify-ui": "powershell -ExecutionPolicy Bypass -File scripts/verify-ui.ps1",
     "render:strict-host": "powershell -ExecutionPolicy Bypass -File scripts/render-strict-host.ps1",

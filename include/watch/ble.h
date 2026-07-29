@@ -37,6 +37,7 @@ typedef struct {
     char artist[49];
     char album[49];
     char track[97];
+    char source_app[33];
     uint32_t revision;
 } watch_ble_media_status_t;
 

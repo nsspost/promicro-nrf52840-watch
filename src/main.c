@@ -314,6 +314,10 @@ int main(void)
             media.track[i] = ble_media->track[i];
             if (ble_media->track[i] == '\0') break;
         }
+        for (uint16_t i = 0u; i < sizeof(media.source_app); ++i) {
+            media.source_app[i] = ble_media->source_app[i];
+            if (ble_media->source_app[i] == '\0') break;
+        }
         (void)watch_ui_set_media_status(&watch_ui_runtime, &media);
         const watch_ble_artwork_status_t *ble_artwork =
             watch_ble_get_artwork_status();
