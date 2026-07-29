@@ -20,6 +20,10 @@ enum {
     MEDIA_TEXT_HEIGHT = 22,
     MEDIA_APP_TITLE_WIDTH = 150,
     MEDIA_APP_TITLE_HEIGHT = 22,
+    MEDIA_ARTWORK_X = 34,
+    MEDIA_ARTWORK_Y = 61,
+    MEDIA_ARTWORK_SIZE = 80,
+    VINYL_GLINT_PHASES = 16,
     MEDIA_MASK_MAX_BYTES =
         ((MEDIA_APP_TITLE_WIDTH * MEDIA_APP_TITLE_HEIGHT + 7) / 8)
 };
@@ -374,6 +378,24 @@ static void format_tenths(int16_t value, char text[12])
     text[length++] = '.';
     text[length++] = (char)('0' + (magnitude % 10u));
     text[length] = '\0';
+}
+
+static gno_color_t color_vinyl(void)
+{
+    return (active_skin == WATCH_UI_SKIN_STRICT_CONTEXT) ?
+           GNO_RGB(15, 15, 18) : GNO_RGB(12, 20, 28);
+}
+
+static gno_color_t color_vinyl_groove(void)
+{
+    return (active_skin == WATCH_UI_SKIN_STRICT_CONTEXT) ?
+           GNO_RGB(24, 24, 29) : GNO_RGB(20, 34, 44);
+}
+
+static gno_color_t color_vinyl_glint(void)
+{
+    return (active_skin == WATCH_UI_SKIN_STRICT_CONTEXT) ?
+           GNO_RGB(78, 78, 90) : GNO_RGB(60, 108, 130);
 }
 
 static void format_percent_from_tenths(int16_t value, char text[6])
@@ -1460,12 +1482,86 @@ static void draw_media_app_title_transition(watch_ui_t *ui,
                           2u, color_text(), previous_phase, current_phase);
 }
 
-static void draw_media_artwork(watch_ui_t *ui)
+static void fill_disc(gno_context_t *graphics, int center_x, int center_y,
+                      int radius, gno_color_t color)
 {
-    const watch_ui_media_status_t *media = &ui->media;
-    gno_fill_rect(ui->graphics, 34, 61, 80, 80, color_background());
+    int radius_squared = radius * radius;
+    for (int y = -radius; y <= radius; ++y) {
+        int x = 0;
+        int y_squared = y * y;
+        while (((x + 1) * (x + 1) + y_squared) <= radius_squared) {
+            ++x;
+        }
+        gno_fill_rect(graphics, center_x - x, center_y + y,
+                      (x * 2) + 1, 1, color);
+    }
+}
+
+/* A compact 16-step orbit. It avoids trigonometry and its library cost. */
+static const int8_t vinyl_glint_x[VINYL_GLINT_PHASES] = {
+    0, 11, 21, 29, 32, 29, 21, 11,
+    0, -11, -21, -29, -32, -29, -21, -11
+};
+
+static const int8_t vinyl_glint_y[VINYL_GLINT_PHASES] = {
+    -32, -29, -21, -11, 0, 11, 21, 29,
+    32, 29, 21, 11, 0, -11, -21, -29
+};
+
+static void draw_vinyl_glint(watch_ui_t *ui, uint8_t phase,
+                             gno_color_t color)
+{
+    int center_x = MEDIA_ARTWORK_X + (MEDIA_ARTWORK_SIZE / 2);
+    int center_y = MEDIA_ARTWORK_Y + (MEDIA_ARTWORK_SIZE / 2);
+    uint8_t index = phase % VINYL_GLINT_PHASES;
+    uint8_t tail = (uint8_t)((index + VINYL_GLINT_PHASES - 2u) %
+                             VINYL_GLINT_PHASES);
+    gno_draw_line(ui->graphics,
+                  center_x + vinyl_glint_x[tail] - 2,
+                  center_y + vinyl_glint_y[tail],
+                  center_x + vinyl_glint_x[index] + 2,
+                  center_y + vinyl_glint_y[index], color);
+}
+
+static void draw_media_vinyl_placeholder(watch_ui_t *ui, uint8_t phase)
+{
+    int center_x = MEDIA_ARTWORK_X + (MEDIA_ARTWORK_SIZE / 2);
+    int center_y = MEDIA_ARTWORK_Y + (MEDIA_ARTWORK_SIZE / 2);
+    gno_fill_rect(ui->graphics, MEDIA_ARTWORK_X, MEDIA_ARTWORK_Y,
+                  MEDIA_ARTWORK_SIZE, MEDIA_ARTWORK_SIZE,
+                  color_background());
+    fill_disc(ui->graphics, center_x, center_y, 37, color_vinyl());
+    fill_disc(ui->graphics, center_x, center_y, 30, color_vinyl_groove());
+    fill_disc(ui->graphics, center_x, center_y, 27, color_vinyl());
+    fill_disc(ui->graphics, center_x, center_y, 17, color_vinyl_groove());
+    fill_disc(ui->graphics, center_x, center_y, 14, color_vinyl());
+    fill_disc(ui->graphics, center_x, center_y, 8, color_surface_high());
+    fill_disc(ui->graphics, center_x, center_y, 2, color_background());
+    draw_vinyl_glint(ui, phase, color_vinyl_glint());
+    ui->artwork_placeholder_phase = phase;
+}
+
+static void animate_media_vinyl_placeholder(watch_ui_t *ui, uint8_t phase)
+{
+    if (ui->artwork_placeholder_phase == phase) return;
+    draw_vinyl_glint(ui, ui->artwork_placeholder_phase, color_vinyl());
+    draw_vinyl_glint(ui, phase, color_vinyl_glint());
+    ui->artwork_placeholder_phase = phase;
+}
+
+static uint8_t media_vinyl_phase(watch_time_t time)
+{
+    return (uint8_t)((time_ticks(time) / WATCH_CLOCK_SUBSECOND_HZ) %
+                     VINYL_GLINT_PHASES);
+}
+
+static void draw_media_artwork(watch_ui_t *ui, watch_time_t time)
+{
     if (ui->artwork.valid && ui->artwork.pixels != NULL &&
         ui->artwork.width == 80u && ui->artwork.height == 80u) {
+        gno_fill_rect(ui->graphics, MEDIA_ARTWORK_X, MEDIA_ARTWORK_Y,
+                      MEDIA_ARTWORK_SIZE, MEDIA_ARTWORK_SIZE,
+                      color_background());
         gno_bitmap_t artwork = {
             .width = ui->artwork.width,
             .height = ui->artwork.height,
@@ -1473,12 +1569,10 @@ static void draw_media_artwork(watch_ui_t *ui)
             .format = GNO_PIXELFORMAT_RGB565,
             .pixels = ui->artwork.pixels
         };
-        (void)gno_draw_bitmap(ui->graphics, 34, 61, &artwork);
+        (void)gno_draw_bitmap(ui->graphics, MEDIA_ARTWORK_X, MEDIA_ARTWORK_Y,
+                              &artwork);
     } else {
-        gno_fill_rect(ui->graphics, 34, 61, 80, 80, color_info());
-        watch_draw_text(ui->graphics, 61, 82,
-                        media->state == 1u ? ">" : "||", 4u,
-                        color_text());
+        draw_media_vinyl_placeholder(ui, media_vinyl_phase(time));
     }
 }
 
@@ -1538,7 +1632,7 @@ static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
     draw_media_app_title_transition(ui, NULL, ui->media.source_app,
                                     0u, time_ticks(time) / 2u);
     gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
-    draw_media_artwork(ui);
+    draw_media_artwork(ui, time);
     draw_media_texts_transition(ui, NULL, NULL,
                                 ui->media.track, ui->media.artist,
                                 0u, time_ticks(time) / 2u);
@@ -1809,6 +1903,7 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
     ui->media_position_started_at = 0u;
     ui->displayed_media_position_s = 0xFFFFFFFFu;
     ui->awaiting_artwork = false;
+    ui->artwork_placeholder_phase = 0xFFu;
     ui->phase_started_at = 0u;
     ui->displayed_time = (watch_time_t) {
         .hour = 0xFFu,
@@ -1905,6 +2000,9 @@ bool watch_ui_update(watch_ui_t *ui, watch_time_t time)
                                             ui->media.source_app,
                                             previous_phase, current_phase);
             ui->displayed_time = time;
+        }
+        if (!ui->artwork.valid) {
+            animate_media_vinyl_placeholder(ui, media_vinyl_phase(time));
         }
     }
 
@@ -2097,7 +2195,7 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
         if (track_changed) {
             ui->awaiting_artwork = true;
             ui->artwork.valid = false;
-            if (media_visible) draw_media_artwork(ui);
+            if (media_visible) draw_media_artwork(ui, now);
         }
         if (media_visible) {
             draw_media_position(ui, now);
@@ -2120,7 +2218,9 @@ bool watch_ui_set_artwork_status(watch_ui_t *ui,
         ui->artwork.valid != status.valid) {
         ui->artwork = status;
         if (status.valid) ui->awaiting_artwork = false;
-        if (ui->screen == WATCH_UI_SCREEN_MEDIA) draw_media_artwork(ui);
+        if (ui->screen == WATCH_UI_SCREEN_MEDIA) {
+            draw_media_artwork(ui, watch_clock_get());
+        }
     }
     return true;
 }
