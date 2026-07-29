@@ -22,14 +22,6 @@ enum {
         ((MEDIA_TEXT_WIDTH * MEDIA_TEXT_HEIGHT + 7) / 8)
 };
 
-typedef struct {
-    uint8_t pixels[MEDIA_TEXT_MASK_BYTES];
-    bool valid;
-} media_text_lane_t;
-
-static media_text_lane_t media_track_lane;
-static media_text_lane_t media_artist_lane;
-
 typedef enum {
     ACTION_NONE = 0,
     ACTION_BACK,
@@ -1343,31 +1335,47 @@ static void media_rasterize_text(uint8_t *mask, int x, const char *text,
     }
 }
 
-static void draw_media_delta_text(gno_context_t *graphics,
-                                  media_text_lane_t *lane,
-                                  int x, int y, const char *text,
-                                  uint8_t scale, gno_color_t color,
-                                  uint32_t phase)
+static void media_build_text_mask(uint8_t *mask, const char *text,
+                                  uint8_t scale, uint32_t phase)
 {
-    uint8_t next[MEDIA_TEXT_MASK_BYTES];
     int text_width = skin_text_width(text, scale);
     int text_x = 0;
     if (text_width > MEDIA_TEXT_WIDTH) {
         int cycle = text_width + 20;
         text_x = -(int)((phase * 2u) % (uint32_t)cycle);
     }
-    media_rasterize_text(next, text_x, text, scale, false);
+    media_rasterize_text(mask, text_x, text, scale, false);
     if (text_width > MEDIA_TEXT_WIDTH) {
-        media_rasterize_text(next, text_x + text_width + 20, text,
+        media_rasterize_text(mask, text_x + text_width + 20, text,
                              scale, true);
     }
+}
+
+static void draw_media_delta_text(gno_context_t *graphics,
+                                  int x, int y,
+                                  const char *previous_text,
+                                  const char *current_text,
+                                  uint8_t scale, gno_color_t color,
+                                  uint32_t previous_phase,
+                                  uint32_t current_phase)
+{
+    uint8_t previous[MEDIA_TEXT_MASK_BYTES];
+    uint8_t current[MEDIA_TEXT_MASK_BYTES];
+    if (previous_text != NULL) {
+        media_build_text_mask(previous, previous_text, scale, previous_phase);
+    } else {
+        for (uint16_t i = 0u; i < MEDIA_TEXT_MASK_BYTES; ++i) {
+            previous[i] = 0u;
+        }
+    }
+    media_build_text_mask(current, current_text, scale, current_phase);
 
     for (uint16_t row = 0u; row < MEDIA_TEXT_HEIGHT; ++row) {
         uint16_t column = 0u;
         while (column < MEDIA_TEXT_WIDTH) {
             uint16_t index = (uint16_t)(row * MEDIA_TEXT_WIDTH + column);
-            bool old_pixel = lane->valid && media_mask_get(lane->pixels, index);
-            bool new_pixel = media_mask_get(next, index);
+            bool old_pixel = media_mask_get(previous, index);
+            bool new_pixel = media_mask_get(current, index);
             if (old_pixel == new_pixel) {
                 ++column;
                 continue;
@@ -1375,35 +1383,45 @@ static void draw_media_delta_text(gno_context_t *graphics,
             uint16_t start = column;
             while (column < MEDIA_TEXT_WIDTH) {
                 index = (uint16_t)(row * MEDIA_TEXT_WIDTH + column);
-                old_pixel = lane->valid && media_mask_get(lane->pixels, index);
-                new_pixel = media_mask_get(next, index);
+                old_pixel = media_mask_get(previous, index);
+                new_pixel = media_mask_get(current, index);
                 if ((old_pixel == new_pixel) ||
-                    (new_pixel != media_mask_get(next,
+                    (new_pixel != media_mask_get(current,
                         (uint16_t)(row * MEDIA_TEXT_WIDTH + start)))) break;
                 ++column;
             }
-            bool foreground = media_mask_get(next,
+            bool foreground = media_mask_get(current,
                 (uint16_t)(row * MEDIA_TEXT_WIDTH + start));
             gno_fill_rect(graphics, x + start, y + row,
                           column - start, 1,
                           foreground ? color : color_background());
         }
     }
-    for (uint16_t i = 0u; i < MEDIA_TEXT_MASK_BYTES; ++i)
-        lane->pixels[i] = next[i];
-    lane->valid = true;
 }
 
-static void draw_media_texts(watch_ui_t *ui, watch_time_t time)
+static const char *media_text_or(const char *text, const char *fallback)
 {
-    const watch_ui_media_status_t *media = &ui->media;
-    uint32_t phase = time_ticks(time) / 2u;
-    draw_media_delta_text(ui->graphics, &media_track_lane, 124, 72,
-                          media->track[0] ? media->track : "нет трека",
-                          2u, color_text(), phase);
-    draw_media_delta_text(ui->graphics, &media_artist_lane, 124, 103,
-                          media->artist[0] ? media->artist : "Gadgetbridge",
-                          1u, color_muted(), phase);
+    return (text != NULL && text[0] != '\0') ? text : fallback;
+}
+
+static void draw_media_texts_transition(watch_ui_t *ui,
+                                        const char *previous_track,
+                                        const char *previous_artist,
+                                        const char *current_track,
+                                        const char *current_artist,
+                                        uint32_t previous_phase,
+                                        uint32_t current_phase)
+{
+    draw_media_delta_text(ui->graphics, 124, 72,
+                          previous_track == NULL ? NULL :
+                          media_text_or(previous_track, "нет трека"),
+                          media_text_or(current_track, "нет трека"),
+                          2u, color_text(), previous_phase, current_phase);
+    draw_media_delta_text(ui->graphics, 124, 103,
+                          previous_artist == NULL ? NULL :
+                          media_text_or(previous_artist, "Gadgetbridge"),
+                          media_text_or(current_artist, "Gadgetbridge"),
+                          1u, color_muted(), previous_phase, current_phase);
 }
 
 static void draw_media_artwork(watch_ui_t *ui)
@@ -1457,12 +1475,12 @@ static void draw_media_play_pause(watch_ui_t *ui)
 
 static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
 {
-    media_track_lane.valid = false;
-    media_artist_lane.valid = false;
     draw_header(ui, "МУЗЫКА", true, color_text());
     gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
     draw_media_artwork(ui);
-    draw_media_texts(ui, time);
+    draw_media_texts_transition(ui, NULL, NULL,
+                                ui->media.track, ui->media.artist,
+                                0u, time_ticks(time) / 2u);
     gno_draw_rect(ui->graphics, 32, 181, 176, 6, color_line());
     draw_media_position(ui);
     gno_draw_rect(ui->graphics, 28, 199, 52, 30, color_info());
@@ -1533,8 +1551,6 @@ static bool render_screen(watch_ui_t *ui, watch_time_t time)
     ui->displayed_time = time;
     ui->needs_redraw = false;
     ui->home_phone_dirty = false;
-    ui->media_status_dirty = false;
-    ui->media_artwork_dirty = false;
     return true;
 }
 
@@ -1805,19 +1821,14 @@ bool watch_ui_update(watch_ui_t *ui, watch_time_t time)
     }
 
     if (ui->screen == WATCH_UI_SCREEN_MEDIA) {
-        if (ui->media_artwork_dirty) {
-            draw_media_artwork(ui);
-            ui->media_artwork_dirty = false;
-        }
-        if (ui->media_status_dirty) {
-            draw_media_texts(ui, time);
-            draw_media_position(ui);
-            draw_media_play_pause(ui);
-            ui->media_status_dirty = false;
-        }
         if ((time_ticks(time) / 2u) !=
             (time_ticks(ui->displayed_time) / 2u)) {
-            draw_media_texts(ui, time);
+            uint32_t previous_phase = time_ticks(ui->displayed_time) / 2u;
+            uint32_t current_phase = time_ticks(time) / 2u;
+            draw_media_texts_transition(ui,
+                                        ui->media.track, ui->media.artist,
+                                        ui->media.track, ui->media.artist,
+                                        previous_phase, current_phase);
             ui->displayed_time = time;
         }
     }
@@ -1951,6 +1962,15 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
 {
     if (ui == NULL || !ui->initialized || status == NULL) return false;
     if (ui->media.revision != status->revision) {
+        bool media_visible = (ui->screen == WATCH_UI_SCREEN_MEDIA);
+        watch_time_t now = watch_clock_get();
+        if (media_visible) {
+            draw_media_texts_transition(
+                ui, ui->media.track, ui->media.artist,
+                status->track, status->artist,
+                time_ticks(ui->displayed_time) / 2u,
+                time_ticks(now) / 2u);
+        }
         ui->media.state = status->state;
         ui->media.volume = status->volume;
         ui->media.duration_s = status->duration_s;
@@ -1964,7 +1984,11 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
             ui->media.track[i] = status->track[i];
             if (status->track[i] == '\0') break;
         }
-        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->media_status_dirty = true;
+        if (media_visible) {
+            draw_media_position(ui);
+            draw_media_play_pause(ui);
+            ui->displayed_time = now;
+        }
     }
     return true;
 }
@@ -1976,7 +2000,7 @@ bool watch_ui_set_artwork_status(watch_ui_t *ui,
     if (ui->artwork.revision != status.revision ||
         ui->artwork.valid != status.valid) {
         ui->artwork = status;
-        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->media_artwork_dirty = true;
+        if (ui->screen == WATCH_UI_SCREEN_MEDIA) draw_media_artwork(ui);
     }
     return true;
 }
