@@ -598,26 +598,27 @@ static void draw_strict_home_clock(watch_ui_t *ui, watch_time_t time)
 static void draw_strict_home_phone_status(watch_ui_t *ui)
 {
     gno_context_t *graphics = ui->graphics;
-    char packet_text[12];
-    uint8_t length = 0u;
-    uint32_t packets = ui->phone.received_packets +
-                       ui->phone.tx_notifications;
-    if (packets > 999u) packets = 999u;
-    append_unsigned(packet_text, &length, (uint16_t)packets);
-    packet_text[length] = '\0';
-
+    /* The cloud slot is reserved for phone weather; link state lives on rim. */
     gno_fill_rect(graphics, 124, 86, 90, 35, color_background());
     watch_strict_draw_icon(graphics, 126, 87,
-                           WATCH_STRICT_ICON_CLOUD, color_text());
-    watch_draw_text(graphics, 160, 92,
-                    phone_state_label(ui->phone.state), 3u,
-                    phone_state_online(ui->phone.state) ?
-                    color_text() : color_muted());
-    watch_draw_text(graphics, 160, 112, packet_text, 1u, color_muted());
+                           WATCH_STRICT_ICON_CLOUD, color_muted());
+
+    gno_fill_rect(graphics, 193, 17, 22, 32, color_background());
+    gno_color_t link_color = phone_state_online(ui->phone.state) ?
+                             color_text() : color_muted();
+    gno_draw_rect(graphics, 196, 20, 16, 22, link_color);
+    gno_draw_line(graphics, 204, 23, 209, 28, link_color);
+    gno_draw_line(graphics, 209, 28, 200, 34, link_color);
+    gno_draw_line(graphics, 200, 34, 209, 40, link_color);
+    gno_draw_line(graphics, 209, 40, 204, 45, link_color);
+    gno_draw_vline(graphics, 204, 23, 23, link_color);
     if (ui->phone.state == WATCH_UI_PHONE_READY) {
-        gno_fill_rect(graphics, 190, 95, 5, 5, color_text());
-    } else {
-        gno_draw_rect(graphics, 190, 95, 5, 5, color_muted());
+        gno_fill_rect(graphics, 198, 22, 12, 18, color_surface_high());
+        gno_draw_line(graphics, 204, 23, 209, 28, color_text());
+        gno_draw_line(graphics, 209, 28, 200, 34, color_text());
+        gno_draw_line(graphics, 200, 34, 209, 40, color_text());
+        gno_draw_line(graphics, 209, 40, 204, 45, color_text());
+        gno_draw_vline(graphics, 204, 23, 23, color_text());
     }
 }
 
