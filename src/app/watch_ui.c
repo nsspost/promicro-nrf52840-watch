@@ -417,20 +417,6 @@ static void format_percent_from_tenths(int16_t value, char text[6])
     text[length] = '\0';
 }
 
-static const char *phone_state_label(watch_ui_phone_state_t state)
-{
-    switch (state) {
-        case WATCH_UI_PHONE_ADVERTISING: return "ADV";
-        case WATCH_UI_PHONE_CONNECTED: return "CON";
-        case WATCH_UI_PHONE_SUBSCRIBED: return "SUB";
-        case WATCH_UI_PHONE_READY: return "READY";
-        case WATCH_UI_PHONE_ERROR: return "ERR";
-        case WATCH_UI_PHONE_OFF:
-        default:
-            return "OFF";
-    }
-}
-
 static bool phone_state_online(watch_ui_phone_state_t state)
 {
     return state == WATCH_UI_PHONE_CONNECTED ||
