@@ -24,6 +24,7 @@ enum {
     MEDIA_ARTWORK_Y = 61,
     MEDIA_ARTWORK_SIZE = 80,
     VINYL_GLINT_PHASES = 16,
+    VOLUME_OVERLAY_TICKS = 3 * WATCH_CLOCK_SUBSECOND_HZ,
     MEDIA_MASK_MAX_BYTES =
         ((MEDIA_APP_TITLE_WIDTH * MEDIA_APP_TITLE_HEIGHT + 7) / 8)
 };
@@ -1627,6 +1628,30 @@ static void draw_media_play_pause(watch_ui_t *ui)
     }
 }
 
+/* Twenty-one short bars trace the safe, central part of the display rim. */
+static const uint8_t volume_arc_y[21] = {
+    15, 12, 10, 8, 6, 5, 4, 3, 3, 2, 2,
+    2, 3, 3, 4, 5, 6, 8, 10, 12, 15
+};
+
+static void clear_media_volume_overlay(watch_ui_t *ui)
+{
+    gno_fill_rect(ui->graphics, 58, 1, 124, 18, color_background());
+}
+
+static void draw_media_volume_overlay(watch_ui_t *ui, uint8_t volume)
+{
+    clear_media_volume_overlay(ui);
+    if (volume > 100u) volume = 100u;
+    for (uint8_t segment = 0u; segment < 21u; ++segment) {
+        bool active = ((uint16_t)(segment + 1u) * 100u) <=
+                      ((uint16_t)volume * 21u);
+        gno_fill_rect(ui->graphics, 60 + (segment * 6),
+                      volume_arc_y[segment], 4, 2,
+                      active ? color_info() : color_surface_high());
+    }
+}
+
 static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
 {
     draw_media_app_title_transition(ui, NULL, ui->media.source_app,
@@ -1647,6 +1672,9 @@ static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
     watch_draw_text(ui->graphics, 59, 192, "|<", 1u, color_text());
     draw_media_play_pause(ui);
     watch_draw_text(ui->graphics, 165, 192, ">|", 1u, color_text());
+    if (ui->volume_overlay_visible) {
+        draw_media_volume_overlay(ui, ui->displayed_media_volume);
+    }
 }
 
 static bool render_screen(watch_ui_t *ui, watch_time_t time)
@@ -1904,6 +1932,9 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
     ui->displayed_media_position_s = 0xFFFFFFFFu;
     ui->awaiting_artwork = false;
     ui->artwork_placeholder_phase = 0xFFu;
+    ui->displayed_media_volume = 0xFFu;
+    ui->volume_overlay_started_at = 0u;
+    ui->volume_overlay_visible = false;
     ui->phase_started_at = 0u;
     ui->displayed_time = (watch_time_t) {
         .hour = 0xFFu,
@@ -2003,6 +2034,12 @@ bool watch_ui_update(watch_ui_t *ui, watch_time_t time)
         }
         if (!ui->artwork.valid) {
             animate_media_vinyl_placeholder(ui, media_vinyl_phase(time));
+        }
+        if (ui->volume_overlay_visible &&
+            elapsed_ticks(ui->volume_overlay_started_at, now) >=
+            VOLUME_OVERLAY_TICKS) {
+            clear_media_volume_overlay(ui);
+            ui->volume_overlay_visible = false;
         }
     }
 
@@ -2162,6 +2199,8 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
         bool track_changed =
             !media_text_equal(ui->media.track, status->track) ||
             !media_text_equal(ui->media.artist, status->artist);
+        bool volume_changed = (status->volume <= 100u) &&
+                              (ui->media.volume != status->volume);
         watch_time_t now = watch_clock_get();
         if (media_visible) {
             draw_media_texts_transition(
@@ -2200,6 +2239,12 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
         if (media_visible) {
             draw_media_position(ui, now);
             draw_media_play_pause(ui);
+            if (volume_changed) {
+                ui->displayed_media_volume = status->volume;
+                ui->volume_overlay_started_at = time_ticks(now);
+                ui->volume_overlay_visible = true;
+                draw_media_volume_overlay(ui, status->volume);
+            }
             ui->displayed_time = now;
         }
     }
