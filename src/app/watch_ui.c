@@ -625,7 +625,7 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
 
     watch_strict_draw_icon(graphics, 34, 87,
                            WATCH_STRICT_ICON_BATTERY, color_text());
-    watch_draw_text(graphics, 68, 95, battery_text, 4u, color_text());
+    watch_draw_text(graphics, 68, 90, battery_text, 4u, color_text());
     gno_fill_rect(graphics, 119, 88, 2, 31, color_line());
     draw_strict_home_weather_placeholder(ui);
     draw_strict_home_phone_status(ui);
