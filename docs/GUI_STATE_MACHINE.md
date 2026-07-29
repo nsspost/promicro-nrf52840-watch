@@ -1,95 +1,44 @@
-# GUI state machine
+# Контроллер экранов и взаимодействия
 
-The watch GUI navigation is driven by a StateSmith state machine. Its editable
-source of truth is:
+Навигация реализована в `src/app/watch_ui.c` как ограниченный контроллер:
+11 перечисленных экранов, стек глубиной 4 и не более 8 hit targets на экран.
+Старый двухэкранный StateSmith-прототип удалён, потому что больше не отражал
+рабочую модель интерфейса.
 
-```text
-statecharts/GuiSm.plantuml
-```
+## Вход
 
-PlantUML was selected instead of draw.io for this machine because the diagram
-is compact, reviewable as text, and can be generated without a graphical
-editor. A future machine may use StateSmith draw.io input, but one machine
-must never have two independently edited source diagrams.
+Драйвер CST816D передаёт координаты в `watch_ui_process_touch()`. Контроллер
+преобразует их в семантические действия: переход, возврат, подтверждение,
+удержание, создание critical request и acknowledgment события. Координаты не
+попадают в модель данных.
 
-## Current flow
+Удержание использует монотонную шкалу RTC1:
 
-```text
-                       ACTIVATE
-                   +-------------+
-                   v             |
-[*] -> HOME_CONTEXT        DIAGNOSTIC_FACE
-                   |             ^
-                   +-------------+
-                       ACTIVATE
-```
+- начало на `touch-down`;
+- progress при сохранении пальца внутри hit target;
+- cancel при выходе, отпускании, смене экрана или event preemption;
+- complete после 12 тиков RTC1, то есть 1500 мс.
 
-`HOME_CONTEXT` is the first target-specific prototype of the planned main
-window. `DIAGNOSTIC_FACE` keeps the earlier watch face available as a simple
-fallback. The temporary touch adapter maps a complete-screen tap to the
-semantic `ACTIVATE` event; raw coordinates remain outside the machine.
+## Навигация
 
 ```text
-touch driver
-    -> semantic event (ACTIVATE)
-    -> generated StateSmith machine
-    -> entry action adapter
-    -> watch screen model/view
-    -> NOG_C
-    -> GC9A01 backend
+HOME
+├── DEVICES ── OVERVIEW ── PARAMETERS ── METRIC
+│                         └─ CONTROLS ── COMMAND
+│                                      └─ CRITICAL REQUEST
+├── EVENTS ── EVENT DETAIL
+└── DIAGNOSTIC
 ```
 
-## Ownership boundaries
+Блокирующее событие может открыть `EVENT DETAIL` поверх любого текущего
+экрана. `BACK` возвращает пользователя на вытесненный экран. Для critical
+request разрешены только request/approval outcomes; execute-action отсутствует.
 
-- `statecharts/GuiSm.plantuml` owns navigation states, events, guards, and
-  transitions.
-- `statecharts/GuiSm.c` and `statecharts/GuiSm.h` are generated artifacts.
-  Never edit them manually.
-- `src/app/gui_state_actions.c` adapts state entry/exit actions to firmware
-  screens. Hardware drivers and rendering details do not belong in the chart.
-- screen modules own their data and rendering behavior.
-- NOGGUI will own reusable UI semantics, layout, profiles, skins, and widgets.
-- NOG_C remains an independent graphics engine and knows nothing about watch
-  navigation.
+## Добавление экрана
 
-## Commands
-
-StateSmith CLI is pinned to version `0.22.2`. Install it once:
-
-```powershell
-npm run install:statesmith
-```
-
-Regenerate the state machine explicitly:
-
-```powershell
-npm run generate:statecharts
-```
-
-The normal build also regenerates it before CMake compilation:
-
-```powershell
-npm run build
-```
-
-The local CLI binary is stored below `tools/statesmith/` and is ignored by
-Git. The installer verifies its SHA-256 checksum before use.
-
-## Adding a screen
-
-1. Add a state and its transitions to `statecharts/GuiSm.plantuml`.
-2. Add a semantic event only when an input has acquired GUI meaning. Raw touch
-   coordinates and bus events must stay outside the state machine.
-3. Give the state an `enter` action and declare that action in
-   `include/watch/gui_state_actions.h`.
-4. Implement the thin action in `src/app/gui_state_actions.c`; delegate actual
-   rendering to a screen module.
-5. Run `npm run build`. Compilation must fail if generated actions and their
-   implementations disagree.
-6. Test the transition and the screen independently where practical, then
-   verify the generated machine on the target through the diagnostic state.
-
-Keep state names stable and descriptive. Prefer semantic events such as
-`ACTIVATE`, `BACK`, `NEXT`, `PREVIOUS`, `TIMEOUT`, `PHONE_CONNECTED`, and
-`ALERT_RECEIVED` over driver-specific names. A raw tap or swipe is translated
-to one of these events by the input adapter according to the active screen.
+1. Добавить стабильное значение в `watch_ui_screen_t`.
+2. Реализовать bounded draw-функцию без рекурсивного layout и allocation.
+3. Регистрировать только семантические hit targets размером не менее 44 px.
+4. Добавить переход в `dispatch_action()`.
+5. Расширить аппаратный сценарий `scripts/verify-ui.ps1`.
+6. Проверить build, Flash/RAM, полный маршрут и heartbeat на плате.

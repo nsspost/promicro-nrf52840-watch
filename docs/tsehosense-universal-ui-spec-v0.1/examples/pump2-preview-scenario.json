@@ -1,0 +1,32 @@
+{
+  "scenarioId": "pump2-guarded-manual-square",
+  "displayProfile": "watch.square.256.mono1",
+  "skinId": "builtin.strict-context",
+  "locale": "ru-RU",
+  "clock": 1784800920,
+  "snapshot": {
+    "sourceId": "PUMP-2",
+    "revision": 1842,
+    "capturedAt": 1784800919,
+    "online": true,
+    "values": {
+      "motor.current": {"value": 4.8, "quality": "good", "ageMs": 240},
+      "pressure.outlet": {"value": 2.4, "quality": "good", "ageMs": 240},
+      "drive.mode": {"value": "AUTO", "quality": "good", "ageMs": 240}
+    }
+  },
+  "event": null,
+  "command": {
+    "draft": {"capabilityId": "drive.mode", "value": "MANUAL"},
+    "phase": "confirmation",
+    "holdProgress": 0.65
+  },
+  "criticalRequest": null,
+  "transport": {
+    "online": true,
+    "latencyMs": 420,
+    "outcome": "success"
+  },
+  "resourceMode": "normal"
+}
+

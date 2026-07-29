@@ -1,0 +1,59 @@
+{
+  "format": "tseho.graphics.skin",
+  "formatVersion": 1,
+  "skinId": "builtin.strict-context",
+  "name": "Строгий контекст",
+  "version": "1.0.0",
+  "targets": [
+    {
+      "profileId": "watch.square.compact.256",
+      "shape": "square",
+      "width": 256,
+      "height": 256,
+      "pixelProfile": "mono1",
+      "layout": "layouts/watch-square-256.layout.json"
+    },
+    {
+      "profileId": "watch.round.compact.256",
+      "shape": "round",
+      "width": 256,
+      "height": 256,
+      "pixelProfile": "mono1",
+      "layout": "layouts/watch-round-256.layout.json"
+    }
+  ],
+  "requiredSemanticRoles": [
+    "time.primary",
+    "watch.battery",
+    "weather.temperature",
+    "context.device.id",
+    "context.device.state",
+    "nearby.count",
+    "unread.phone",
+    "unread.ecosystem",
+    "event.severity",
+    "command.phase"
+  ],
+  "requiredIcons": [
+    "BatteryMedium",
+    "Cloud",
+    "CaretLeft",
+    "CaretRight",
+    "ChatCircle",
+    "Hexagon",
+    "Info",
+    "BellSimple",
+    "Warning",
+    "WarningOctagon"
+  ],
+  "budgets": {
+    "maxPackageBytes": 524288,
+    "maxPeakRamBytes": 12288,
+    "maxDirtyRects": 8
+  },
+  "fallbackSkinId": "builtin.readable",
+  "licenseFiles": [
+    "licenses/PHOSPHOR-LICENSE.txt",
+    "licenses/ROBOTO-LICENSE.txt"
+  ]
+}

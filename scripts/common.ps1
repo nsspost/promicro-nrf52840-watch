@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $script:ProjectRoot = Split-Path -Parent $PSScriptRoot
 $script:XpacksRoot = Join-Path $ProjectRoot "xpacks"
-$script:JLinkSpeedKhz = 100
+$script:JLinkSpeedKhz = 1000
 
 function Find-XpackExecutable {
     param(
@@ -11,16 +11,37 @@ function Find-XpackExecutable {
     )
 
     $package = Join-Path $XpacksRoot "@xpack-dev-tools/$PackageName"
-    if (-not (Test-Path $package)) {
-        throw "Tool package '$PackageName' is absent. Run: npx xpm install"
+    if (Test-Path $package) {
+        $match = Get-ChildItem -Path (Join-Path $package ".content/bin") `
+            -File -Filter $Executable |
+            Select-Object -First 1
+        if ($match) {
+            return $match.FullName
+        }
     }
 
-    $match = Get-ChildItem -Path (Join-Path $package ".content/bin") -File -Filter $Executable |
-        Select-Object -First 1
-    if (-not $match) {
-        throw "'$Executable' was not found under '$package'."
+    # STM32CubeIDE includes the same standalone GNU, CMake and Ninja tools.
+    # Reuse them when xpm is unavailable, while keeping xPack as the preferred
+    # reproducible toolchain.
+    $stm32Root = "C:\ST"
+    if (Test-Path -LiteralPath $stm32Root) {
+        $match = Get-ChildItem -Path $stm32Root -Recurse -File `
+            -Filter $Executable -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.FullName -match '\\STM32CubeIDE_[^\\]+\\STM32CubeIDE\\plugins\\'
+            } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+        if ($match) {
+            Write-Host "Using STM32CubeIDE tool: $($match.FullName)"
+            return $match.FullName
+        }
     }
-    return $match.FullName
+
+    throw @"
+'$Executable' was not found in the project xPacks or STM32CubeIDE.
+Install the pinned tools with 'npx xpm install', or install STM32CubeIDE.
+"@
 }
 
 function Get-OpenOcd {

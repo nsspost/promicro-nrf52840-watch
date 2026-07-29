@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tsehosense.local/schemas/ui/preview-scenario.v1.json",
+  "title": "TsehoLab UI Preview Scenario v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scenarioId", "displayProfile", "skinId", "snapshot"],
+  "properties": {
+    "scenarioId": {"type": "string", "maxLength": 64},
+    "displayProfile": {"type": "string", "maxLength": 64},
+    "skinId": {"type": "string", "maxLength": 64},
+    "locale": {"type": "string", "maxLength": 16, "default": "ru-RU"},
+    "clock": {"type": "integer", "minimum": 0},
+    "snapshot": {"type": "object"},
+    "event": {"type": ["object", "null"]},
+    "command": {"type": ["object", "null"]},
+    "criticalRequest": {"type": ["object", "null"]},
+    "transport": {
+      "type": "object",
+      "properties": {
+        "online": {"type": "boolean"},
+        "latencyMs": {"type": "integer", "minimum": 0},
+        "outcome": {"enum": ["success", "rejected", "timeout"]}
+      }
+    },
+    "resourceMode": {"enum": ["normal", "low-memory", "missing-skin"]}
+  }
+}
+

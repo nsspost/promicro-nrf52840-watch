@@ -1,0 +1,28 @@
+{
+  "profileId": "gateway.panel.320x240.rgb565",
+  "shape": "rectangular",
+  "width": 320,
+  "height": 240,
+  "sizeClass": "m",
+  "pixelFormat": "rgb565",
+  "inputs": ["touch", "buttons"],
+  "safeArea": {"top": 6, "right": 6, "bottom": 6, "left": 6},
+  "minimumTextPx": 11,
+  "minimumPrimaryTextPx": 20,
+  "minimumHitPx": 40,
+  "budgets": {
+    "framebufferBytes": 153600,
+    "peakRendererRamBytes": 196608,
+    "maxDirtyRects": 16,
+    "maxFps": 10
+  },
+  "capabilities": {
+    "grayLevels": 65536,
+    "supportsTouch": true,
+    "supportsAnimation": true,
+    "supportsSparkline": true,
+    "supportsGauge": true,
+    "supportsTwoColumnLayout": true
+  }
+}
+

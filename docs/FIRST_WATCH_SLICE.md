@@ -1,95 +1,86 @@
-# First working watch slice
+# Полноценный GUI часов на тестовых данных
 
-Date: 2026-07-23
+Дата проверки: 2026-07-24
 
-## Implemented
+## Реализовано
 
-- ProMicro nRF52840 bare-metal startup and SWD debugging;
-- GC9A01 240 x 240 round RGB565 display;
-- CST816D capacitive touch controller at I2C address `0x15`;
-- controllable LCD backlight;
-- RTC1 eight-Hz animation time base using the internal 32.768 kHz RC clock,
-  with civil time derived from groups of eight ticks;
-- initial local time captured by the host build script;
-- framebuffer-free NOG_C streaming backend;
-- first target prototype of the `home-context` main window;
-- built-in diagnostic digital watch face;
-- incremental seconds update;
-- StateSmith-generated GUI state machine;
-- touch-triggered transition between the main and diagnostic screens;
-- J-Link RAM diagnostics for clock, touch, GUI, and bus errors.
+На реальной плате работают nRF52840, круглый GC9A01 240×240 RGB565 и
+сенсорный контроллер CST816D. GUI построен поверх framebuffer-free backend
+NOG_C, не использует динамическую память и получает данные только из
+фиксированной тестовой View Model.
 
-The firmware image currently uses 9,820 bytes of Flash and 1,104 bytes of
-static RAM. No full-screen framebuffer or dynamic allocation is used.
+Доступны 11 экранов:
 
-The watch selects NOG_C's compact 32-bit line-clipping and freestanding memory
-profile. Its coordinate limit is derived at compile time as four times the
-largest configured display dimension. The build rejects accidental
-reintroduction of 64-bit division, `memcpy`, `memmove`, or NOG_C libc-memory
-dependencies.
+1. `HOME_CONTEXT`;
+2. список устройств;
+3. обзор устройства;
+4. список параметров;
+5. деталь параметра со sparkline;
+6. список действий;
+7. lifecycle guarded-команды;
+8. lifecycle critical request;
+9. журнал событий;
+10. деталь события;
+11. диагностика часов.
 
-## Layer boundary
+Тестовый набор содержит PUMP-2, offline-обнаружитель и локальные часы,
+quality-состояния `good`, `uncertain`, `stale`, `offline`, а также обычное,
+важное и блокирующее события. Внешний транспорт, BLE и реальные данные
+намеренно не подключены.
+
+## Safety-поведение
+
+- guarded-команда отправляется только после удержания 1500 мс;
+- отображаются отдельные результаты `success`, `rejected` и `timeout`;
+- desired state не подменяет confirmed state;
+- critical action является только запросом;
+- `approved` явно не означает `executing`;
+- блокирующее событие вытесняет экран команды или запроса;
+- смена экрана отменяет активное удержание;
+- минимальная интерактивная зона составляет 44×44 px.
+- компактный bounded-шрифт поддерживает русские uppercase UTF-8 подписи.
+
+## Архитектурная граница
 
 ```text
-touch -> semantic event -> StateSmith GUI machine
-                              |
-                              v
-RTC1 -> watch time model -> watch-owned target screens
-                                      |
-                                      v
-                                    NOG_C
-                                      |
-                                      v
-                              GC9A01 backend
+test View Model -> bounded watch templates -> semantic hit targets
+                                              |
+RTC1 -> lifecycle controller -----------------+
+                                              v
+                                            NOG_C
+                                              |
+                                              v
+                                           GC9A01
 ```
 
-These screens belong to this firmware. They are not part of NOG_C, which
-remains a generic graphics engine. The new main window is a target prototype,
-not yet a NOGGUI/Universal UI package: the independent UI repository still
-owns the reusable semantic model, layout, profiles, skins, and package format.
+`ui_demo_model.c` является только сценарием-прототипом. Он не изображает
+реальную связь и позже должен быть заменён адаптером над нормализованной
+Universal UI View Model без изменения renderer-а.
 
-## Current interaction
+## Проверка
 
-- `HOME_CONTEXT` starts after reset;
-- its header shows reserved offline indicators for phone (`PH`), Technosense
-  (`TS`), and detector (`DET`) connections;
-- its context panel reports only the real local context (`LOCAL`) and does not
-  invent connection state or phone data;
-- large `HH:MM` digital time;
-- a seconds progress bar;
-- a tap is temporarily translated to `ACTIVATE`;
-- `ACTIVATE` switches between `HOME_CONTEXT` and `DIAGNOSTIC_FACE`;
-- seconds and seven-segment digits are updated differentially without clearing
-  their complete bounds.
-- the seconds bar receives an eight-step subsecond phase and advances by one
-  pixel roughly every 0.4 seconds instead of jumping 2-3 pixels once a second.
+```powershell
+npm run build
+npm run flash
+npm run verify-ui
+npm run verify-running
+```
 
-See `docs/GUI_STATE_MACHINE.md` before adding screens or navigation.
-See `docs/RENDERING_POLICY.md` for the no-flicker widget repaint contract.
+`verify-ui` через mailbox в RAM выполняет 43 действия в обычном контексте
+main loop. Сценарий обходит все экраны, проверяет back-navigation, все исходы
+guarded/critical lifecycle, event precedence и подтверждение события.
 
-## Known limitations
+Последняя измеренная сборка:
 
-- the internal RC low-frequency clock is not sufficiently accurate for a
-  finished watch;
-- time is initialized at build time and is lost after a reset;
-- no date, timezone, daylight-saving, phone synchronization, or settings UI;
-- display writes run at 8 MHz, the maximum supported by the currently selected
-  nRF52840 SPIM0 instance; `WATCH_LCD_SPI_MHZ` can select 1, 2, 4, or 8 MHz;
-- NOG_C solid spans are mapped to one-row GC9A01 transactions;
-- touch is polled rather than interrupt-driven;
-- backlight has on/off control but no PWM brightness;
-- the main loop does not enter low-power sleep;
-- there is no BLE stack, bootloader, OTA, battery measurement, or storage.
+- Flash text: 20 324 bytes;
+- static RAM: 1 604 bytes;
+- framebuffer и `malloc` отсутствуют;
+- в образ не попадают 64-битное деление, `memcpy` и `memmove`.
 
-## Next engineering gates
+## Следующие продуктовые этапы
 
-1. Confirm touch orientation and debounce behavior on the physical assembly.
-2. Add a 240 x 240 round Display Profile to the independent NOGGUI project.
-3. Measure the external 32.768 kHz crystal and switch RTC1 to LFXO when valid.
-4. Add a solid-rectangle display transaction and evaluate SPIM3 at 16/32 MHz
-   after signal-integrity tests.
-5. Add interrupt-driven touch, display timeout, PWM dimming, and system sleep.
-6. Select the BLE/platform baseline and synchronize time from a phone.
-7. Reproduce the main-window prototype through the independent NOGGUI
-   reference renderer and embedded adapter before promoting it to a reusable
-   UI package, without moving watch-specific code into NOG_C.
+- заменить тестовую View Model скомпилированным Universal UI package;
+- расширить локализацию за пределы встроенного русского demo-набора;
+- подключить реальный snapshot/event/command transport;
+- реализовать storage, reconnect, TTL/idempotency и authority protocol;
+- измерить redraw latency, энергопотребление и читаемость на улице.

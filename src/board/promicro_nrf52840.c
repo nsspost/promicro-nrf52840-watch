@@ -12,7 +12,11 @@
 #define GPIO_DIRSET  0x518u
 #define GPIO_PIN_CNF 0x700u
 
+#if WATCH_LCD_SPI_MHZ > 8
+#define SPIM0_BASE          0x4002F000u /* SPIM3: up to 32 MHz on nRF52840. */
+#else
 #define SPIM0_BASE          0x40003000u
+#endif
 #define SPIM_TASKS_START    REG32(SPIM0_BASE + 0x010u)
 #define SPIM_TASKS_STOP     REG32(SPIM0_BASE + 0x014u)
 #define SPIM_EVENTS_STOPPED REG32(SPIM0_BASE + 0x104u)
@@ -61,6 +65,7 @@
 #define TWIM_TIMEOUT_LOOPS  2000000u
 #define TX_STAGING_SIZE     512u
 #define TOUCH_TX_STAGING_SIZE 16u
+#define PROMICRO_STATUS_LED_PIN 15u
 
 #ifndef WATCH_LCD_SPI_MHZ
 #define WATCH_LCD_SPI_MHZ 1
@@ -74,6 +79,10 @@
 #define WATCH_SPIM_FREQUENCY 0x40000000u
 #elif WATCH_LCD_SPI_MHZ == 8
 #define WATCH_SPIM_FREQUENCY 0x80000000u
+#elif WATCH_LCD_SPI_MHZ == 16
+#define WATCH_SPIM_FREQUENCY 0x0A000000u
+#elif WATCH_LCD_SPI_MHZ == 32
+#define WATCH_SPIM_FREQUENCY 0x14000000u
 #else
 #error "SPIM0 LCD frequency must be 1, 2, 4, or 8 MHz"
 #endif
@@ -142,6 +151,9 @@ static bool gpio_read(uint8_t encoded_pin)
 
 void watch_board_init(void)
 {
+    /* SuperMini/ProMicro status LED is connected to P0.15. */
+    gpio_output_init(PROMICRO_STATUS_LED_PIN, false);
+
     /* SPIM PSEL routes the peripheral, but GPIO direction remains explicit. */
     gpio_output_init(WATCH_LCD_SCK_PIN, false);
     gpio_output_init(WATCH_LCD_MOSI_PIN, false);
@@ -159,6 +171,11 @@ void watch_board_init(void)
     SPIM_RXD_PTR = 0u;
     SPIM_RXD_MAXCNT = 0u;
     SPIM_ENABLE = SPIM_ENABLE_ENABLED;
+}
+
+void watch_status_led_set(bool enabled)
+{
+    gpio_write(PROMICRO_STATUS_LED_PIN, enabled);
 }
 
 void watch_delay_ms(uint32_t milliseconds)

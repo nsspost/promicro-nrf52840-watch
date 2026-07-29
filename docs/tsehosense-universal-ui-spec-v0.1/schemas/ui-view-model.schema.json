@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tsehosense.local/schemas/ui/view-model.v1.json",
+  "title": "TsehoSense UI View Model v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "formatVersion", "viewId", "sourceRevision", "screens", "policies"],
+  "properties": {
+    "format": {"const": "tseho.ui-view"},
+    "formatVersion": {"const": 1},
+    "viewId": {"type": "string", "maxLength": 64},
+    "sourceRevision": {"type": "integer", "minimum": 0},
+    "catalogVersion": {"type": "string", "maxLength": 32},
+    "context": {"type": "object"},
+    "screens": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/screen"}
+    },
+    "policies": {
+      "type": "object",
+      "required": ["eventPreemption", "unknownRisk"],
+      "properties": {
+        "eventPreemption": {
+          "const": ["blocking-event", "important-event", "critical-request-status", "command-status", "ordinary-event"]
+        },
+        "unknownRisk": {"const": "critical"}
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {"type": "object"}
+    }
+  },
+  "$defs": {
+    "screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["screenId", "template", "components"],
+      "properties": {
+        "screenId": {"type": "string", "maxLength": 64},
+        "template": {
+          "enum": ["home-context", "device-list", "device-overview", "parameter-list", "control-list", "metric-detail", "event-journal", "event-detail", "command-status", "critical-request"]
+        },
+        "title": {"type": "string", "maxLength": 80},
+        "components": {
+          "type": "array",
+          "maxItems": 24,
+          "items": {"$ref": "#/$defs/component"}
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["componentId", "kind"],
+      "properties": {
+        "componentId": {"type": "string", "maxLength": 64},
+        "kind": {
+          "enum": ["text", "metric", "state", "lamp", "gauge", "bar", "sparkline", "list", "enum", "boolean", "trigger", "navigation", "event", "command-status", "critical-request-status"]
+        },
+        "binding": {"type": "string", "maxLength": 96},
+        "label": {"type": "string", "maxLength": 80},
+        "priority": {"type": "integer", "minimum": 0, "maximum": 100},
+        "visibility": {"enum": ["primary", "secondary", "details", "hidden"]},
+        "riskClass": {"enum": ["local", "reversible", "guarded", "critical"]},
+        "action": {
+          "enum": ["navigate", "set-draft", "submit-command", "create-critical-request", "acknowledge-event", "dismiss", "cancel-request"]
+        }
+      }
+    }
+  }
+}
+

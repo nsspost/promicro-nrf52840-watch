@@ -1,0 +1,58 @@
+{
+  "format": "tseho.skin",
+  "formatVersion": 1,
+  "skinId": "builtin.strict-context",
+  "name": "Строгий контекст",
+  "version": "0.5.0",
+  "author": "ЦехоСенс project + OpenAI",
+  "license": "project-internal",
+  "targets": [
+    {
+      "shape": "square",
+      "width": 256,
+      "height": 256,
+      "pixelProfile": "mono1",
+      "layout": "square-normal"
+    },
+    {
+      "shape": "round",
+      "width": 256,
+      "height": 256,
+      "pixelProfile": "mono1",
+      "layout": "round-normal"
+    }
+  ],
+  "layouts": [
+    "square-normal",
+    "round-normal",
+    "square-ambient",
+    "round-ambient"
+  ],
+  "flows": [
+    "device-flow.json",
+    "event-flow.json",
+    "command-flow.json"
+  ],
+  "requiredSlots": [
+    "time.hour",
+    "time.minute",
+    "watch.battery"
+  ],
+  "optionalSlots": [
+    "weather.temperature",
+    "context.currentDevice",
+    "context.nearbyCount"
+  ],
+  "systemSlots": [
+    "unread.phone",
+    "unread.ecosystem"
+  ],
+  "budgets": {
+    "pixelFormat": "mono1",
+    "maxDirtyRects": 8,
+    "maxFps": 1,
+    "fullFrameBytes": 8192,
+    "peakRamBytes": 12288
+  },
+  "fallbackSkinId": "builtin.readable"
+}

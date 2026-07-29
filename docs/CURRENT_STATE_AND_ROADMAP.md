@@ -1,18 +1,31 @@
 # Текущее состояние и план экспериментальных часов
 
-Дата ревизии: 2026-07-23  
-Статус: планирование; следующая реализация требует выбора аппаратной цели
+> **Решение от 2026-07-27:** целевой телефонный companion — Gadgetbridge.
+> Chronos остаётся только подтверждением BLE/NUS bring-up; этапы разработки
+> Chronos parser отменены. Для телефонной части актуален
+> [`GADGETBRIDGE_INTEGRATION_PLAN.md`](GADGETBRIDGE_INTEGRATION_PLAN.md).
+
+Дата ревизии: 2026-07-27
+Статус: GUI подтверждён на плате; Tseho Link codec, собственный GATT service и
+development APK Gadgetbridge собраны; следующий этап — сквозной handshake и
+синхронизация времени на реальном телефоне
 
 ## 1. Что уже есть
 
 ### Аппаратная основа
 
-- ProMicro-плата с подтверждённым `nRF52840_XXAA`.
-- SWD через J-LinkOB работает стабильно на 1 МГц.
+- ProMicro-плата с подтверждённым `nRF52840_XXAA`, вариант QIAA-C0.
+- SWD работает через CMSIS-DAP `free-dap stm32f411blackpill`; проверенная
+  частота для безопасных операций — 100 кГц, чтение также стабильно на 1 МГц.
 - Целевое питание при отладке: 3,300 В.
 - Cortex-M4F определяется, Flash программируется и проверяется.
-- До первой записи сохранены полный Flash 1 МиБ и UICR.
+- До первой записи сохранены полный Flash 1 МиБ, FICR, UICR, bootloader и
+  bootloader settings.
 - Диагностическая прошивка запускается; RAM heartbeat проверен через J-Link.
+- Подтверждены круглый дисплей GC9A01 240×240 RGB565 и touch CST816D.
+- Аппаратный `nRESET` — P0.18. Подключённая линия reset от Free-DAP вызывала
+  повторные внешние сбросы; после её отключения `boot_count` стабилен.
+- WDT не запускается (`WDT.RUNSTATUS = 0`).
 
 ### Firmware и инструменты
 
@@ -22,11 +35,42 @@
 - SEGGER probe/flash/GDB scripts;
 - автоматический backup перед первой записью;
 - VS Code tasks и Cortex-Debug configuration;
-- воспроизводимые `build`, `probe`, `flash`, `verify-running`;
+- воспроизводимые `build`, `probe`, `flash`, `verify-ui`, `verify-running`;
 - optional CMake integration с NOG_C.
 
-Текущий firmware не содержит BLE, scheduler/RTOS, USB application, драйвер
-дисплея, ввод, энергосбережение, файловое хранилище или UI.
+Текущий firmware содержит драйверы дисплея и touch, framebuffer-free NOG_C
+backend, 11-экранный GUI на тестовой View Model и bare-metal BLE transport на
+S140. Он пока не содержит scheduler/RTOS, USB application, энергосбережение,
+файловое хранилище и подключение реальных TsehoSense-данных.
+
+### BLE, Tseho Link и исторический Chronos bring-up
+
+- устройство рекламируется как `Tseho Watch`;
+- целевая прошивка теперь использует собственный Tseho Link service:
+  - service `7a5c0001-34f7-4e8b-a2d1-6c91f0b5732e`;
+  - RX `7a5c0002-34f7-4e8b-a2d1-6c91f0b5732e`;
+  - TX `7a5c0003-34f7-4e8b-a2d1-6c91f0b5732e`;
+- реализованы bounded C encoder/stream decoder, capability HELLO, READY и
+  применение `TIME_SET` без heap и 64-битного деления;
+- в отдельной ветке Gadgetbridge есть discovery, transport, codec, time,
+  notifications, battery и music adapters; unit tests и APK собираются;
+- Windows успешно выполняет uncached GATT discovery, подписывается на TX,
+  и пишет тестовые данные в RX старого NUS baseline;
+- реальное приложение Chronos на телефоне подключилось, подписалось и
+  передало восемь пакетов общим объёмом 70 байт;
+- этот Chronos/NUS результат является только историческим доказательством
+  исправности BLE.
+
+Для Chronos часы работают только в peripheral role. Ненужное одновременное
+сканирование в central role удалено. Метаданные TX notify-характеристики и CCCD
+исправлены: значение имеет ненулевую начальную длину, а прямой read/write для
+TX запрещён.
+
+Текущий transport считает пакеты, собирает Tseho Link frames и применяет
+время/UTC offset. Уведомления и музыка уже кодируются Android-стороной, но ещё
+не подключены к bounded model и StateSmith GUI часов. Подробности:
+[`GADGETBRIDGE_INTEGRATION_PLAN.md`](GADGETBRIDGE_INTEGRATION_PLAN.md) и
+[`GADGETBRIDGE_DEVELOPMENT.md`](GADGETBRIDGE_DEVELOPMENT.md).
 
 ### NOG_C
 
@@ -35,7 +79,7 @@
 ```text
 external/NOG_C
 origin: https://github.com/nsspost/NOG_C.git
-revision: 2fc3c089c40c3ecc9d783e93939ca08fc43f916a
+revision: 963e61516253ddd75e4edc5e0b80d4528fb4f2d1
 ```
 
 На текущей ревизии есть:
@@ -56,18 +100,16 @@ revision: 2fc3c089c40c3ecc9d783e93939ca08fc43f916a
 
 ### TsehoSense Universal UI
 
-Создан отдельный локальный Git-репозиторий:
+Контракты v0.1 находятся непосредственно в этом репозитории:
 
 ```text
-external/tsehosense-universal-ui
-branch: main
-revision: c8d79beeb595cc58e90989611e4fa9fe2babc398
-remote: не назначен
+docs/tsehosense-universal-ui-spec-v0.1
+revision: v0.1
 ```
 
-В нём находится спецификация v0.1, схемы, Display Profiles, PUMP-2 examples,
-ADR proposal и правила реализации. Реализации reference model, renderer,
-binary compiler и C runtime пока нет.
+Там находятся спецификация, схемы, Display Profiles, PUMP-2 examples, ADR
+proposal и правила реализации. Watch-first renderer использует их как
+контракт, но binary compiler/package parser пока не реализован.
 
 Главная граница:
 

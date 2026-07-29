@@ -1,0 +1,79 @@
+{
+  "format": "tseho.graphics.tokens",
+  "formatVersion": 1,
+  "name": "strict-context",
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "grid": 4
+  },
+  "colors": {
+    "surface": { "srgb": "#000000", "mono1": 0, "gray4": 0 },
+    "surfaceRaised": { "srgb": "#050505", "mono1": 0, "gray4": 0 },
+    "textPrimary": { "srgb": "#FFFFFF", "mono1": 1, "gray4": 15 },
+    "textStrong": { "srgb": "#F3F4EF", "mono1": 1, "gray4": 15 },
+    "textSecondary": { "srgb": "#A0A0A0", "mono1": 1, "gray4": 10 },
+    "textMuted": { "srgb": "#858585", "mono1": 1, "gray4": 8 },
+    "divider": { "srgb": "#666666", "mono1": 1, "gray4": 6 },
+    "dividerStrong": { "srgb": "#767676", "mono1": 1, "gray4": 7 },
+    "inactive": { "srgb": "#3D3D3D", "mono1": 0, "gray4": 4 },
+    "inverseSurface": { "srgb": "#F3F4EF", "mono1": 1, "gray4": 15 },
+    "inverseText": { "srgb": "#050505", "mono1": 0, "gray4": 0 }
+  },
+  "font": {
+    "family": "Roboto",
+    "weights": [400, 500, 600, 700],
+    "tabularNumericRoles": ["displayTime", "metric", "editorValue"],
+    "roles": {
+      "displayTimeSquare": { "size": 92, "weight": 700, "lineHeight": 0.9, "trackingEm": -0.03 },
+      "displayTimeRound": { "size": 68, "weight": 700, "lineHeight": 0.9, "trackingEm": -0.03 },
+      "displayTimeAmbientSquare": { "size": 92, "weight": 700, "lineHeight": 0.9, "trackingEm": -0.03 },
+      "displayTimeAmbientRound": { "size": 75, "weight": 700, "lineHeight": 0.9, "trackingEm": -0.03 },
+      "deviceSquare": { "size": 56, "weight": 700, "lineHeight": 0.82, "trackingEm": -0.015 },
+      "deviceRound": { "size": 42, "weight": 700, "lineHeight": 0.82, "trackingEm": -0.015 },
+      "statusSquare": { "size": 30, "weight": 600, "lineHeight": 1.0 },
+      "statusRound": { "size": 24, "weight": 600, "lineHeight": 1.0 },
+      "screenTitleSquare": { "size": 28, "weight": 700, "lineHeight": 0.95, "trackingEm": -0.025 },
+      "screenTitleRound": { "size": 25, "weight": 700, "lineHeight": 0.95, "trackingEm": -0.025 },
+      "screenTitleRoundLong": { "size": 19, "weight": 700, "lineHeight": 0.95, "trackingEm": -0.025 },
+      "metricSquare": { "size": 31, "weight": 700, "lineHeight": 1.0, "trackingEm": -0.025 },
+      "metricRound": { "size": 24, "weight": 700, "lineHeight": 1.0, "trackingEm": -0.025 },
+      "body": { "size": 11, "weight": 500, "lineHeight": 1.18 },
+      "caption": { "size": 10, "weight": 600, "lineHeight": 1.0, "trackingEm": 0.03 },
+      "micro": { "size": 8, "weight": 600, "lineHeight": 1.0, "trackingEm": 0.08 }
+    }
+  },
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "screenSquare": 14,
+    "lg": 16,
+    "xl": 20,
+    "xxl": 24,
+    "screenRound": 26,
+    "roundDivider": 28,
+    "roundTime": 37,
+    "roundBottom": 54
+  },
+  "stroke": {
+    "row": 1,
+    "section": 2,
+    "important": 2,
+    "blocking": 4,
+    "criticalDouble": 3
+  },
+  "interaction": {
+    "minHitWidth": 44,
+    "minHitHeight": 44,
+    "holdDurationMs": 1500,
+    "swipeCommitPx": 44
+  },
+  "budgets": {
+    "pixelProfile": "mono1",
+    "fullFrameBytes": 8192,
+    "peakRamBytes": 12288,
+    "maxDirtyRects": 8,
+    "backgroundMaxFps": 1
+  }
+}

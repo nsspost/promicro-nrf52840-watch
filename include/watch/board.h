@@ -33,6 +33,7 @@ enum {
 
 void watch_board_init(void);
 void watch_delay_ms(uint32_t milliseconds);
+void watch_status_led_set(bool enabled);
 void watch_lcd_select(bool selected);
 void watch_lcd_set_data_mode(bool data);
 void watch_lcd_set_reset(bool released);

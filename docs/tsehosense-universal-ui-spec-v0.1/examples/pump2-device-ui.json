@@ -1,0 +1,81 @@
+{
+  "deviceId": "PUMP-2",
+  "label": "PUMP-2",
+  "type": "pump-drive",
+  "installation": {
+    "locationId": "contour-1",
+    "shortLabel": "КОНТУР 1"
+  },
+  "presentation": {
+    "preferredTemplate": "device-overview"
+  },
+  "parameters": [
+    {
+      "parameterId": "motor.current",
+      "channelSchema": "measurement.current.v1",
+      "label": "Ток",
+      "compactLabel": "ТОК",
+      "unit": "A",
+      "presentation": {
+        "visibility": "primary",
+        "priority": 80,
+        "preferredKinds": ["number", "sparkline"],
+        "sizeHint": "large",
+        "precision": 1
+      }
+    },
+    {
+      "parameterId": "pressure.outlet",
+      "channelSchema": "measurement.pressure.v1",
+      "label": "Давление",
+      "compactLabel": "ДАВЛЕНИЕ",
+      "unit": "bar",
+      "presentation": {
+        "visibility": "primary",
+        "priority": 90,
+        "preferredKinds": ["number", "gauge", "sparkline"],
+        "sizeHint": "large",
+        "precision": 1
+      }
+    },
+    {
+      "parameterId": "drive.mode",
+      "channelSchema": "status.drive-mode.v1",
+      "label": "Режим",
+      "compactLabel": "РЕЖИМ",
+      "presentation": {
+        "visibility": "secondary",
+        "priority": 70,
+        "preferredKinds": ["state"]
+      }
+    }
+  ],
+  "capabilities": [
+    {
+      "capabilityId": "drive.mode",
+      "label": "Режим",
+      "compactLabel": "РЕЖИМ",
+      "controlType": "enum",
+      "choices": ["AUTO", "MANUAL"],
+      "riskClass": "guarded",
+      "confirmation": "hold-1500-ms",
+      "requiresOnline": true,
+      "allowDeferred": false,
+      "consequence": "В ручном режиме автоматика перестаёт регулировать привод."
+    },
+    {
+      "capabilityId": "pump.stop",
+      "label": "Остановить насос",
+      "compactLabel": "ОСТАНОВ",
+      "controlType": "trigger",
+      "riskClass": "critical",
+      "watchPolicy": "request-only",
+      "requiresExternalAuthority": true,
+      "watchMayExecuteAfterApproval": false,
+      "requiresOnline": true,
+      "allowDeferred": false,
+      "consequence": "Контур потеряет давление."
+    }
+  ]
+}
+

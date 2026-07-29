@@ -11,6 +11,7 @@
 
 #define RTC1_BASE        0x40011000u
 #define RTC1_TASKS_START REG32(RTC1_BASE + 0x000u)
+#define RTC1_TASKS_STOP  REG32(RTC1_BASE + 0x004u)
 #define RTC1_TASKS_CLEAR REG32(RTC1_BASE + 0x008u)
 #define RTC1_COUNTER     REG32(RTC1_BASE + 0x504u)
 #define RTC1_PRESCALER   REG32(RTC1_BASE + 0x508u)
@@ -33,17 +34,21 @@ void watch_clock_init(uint8_t hour, uint8_t minute, uint8_t second)
     elapsed_ticks = 0u;
     previous_counter = 0u;
 
-    /*
-     * Start with the internal 32.768 kHz RC oscillator. It is less accurate
-     * than an LFXO but is available on every board variant; BLE time sync can
-     * correct it later.
-     */
+#ifndef WATCH_ENABLE_BLE
+    /* In a non-BLE build the application owns LFCLK directly. */
     CLOCK_LFCLKSRC = 0u;
     CLOCK_EVENTS_LFSTARTED = 0u;
     CLOCK_TASKS_LFCLKSTART = 1u;
     while (CLOCK_EVENTS_LFSTARTED == 0u) {
     }
+#endif
 
+    /*
+     * TIME_SET can arrive after the clock is already running. Nordic RTC
+     * configuration registers must not be rewritten while the peripheral is
+     * active; doing so made a phone time sync accelerate the clock wildly.
+     */
+    RTC1_TASKS_STOP = 1u;
     RTC1_TASKS_CLEAR = 1u;
     /* 32,768 Hz / (4095 + 1) = eight animation ticks per second. */
     RTC1_PRESCALER = 4095u;

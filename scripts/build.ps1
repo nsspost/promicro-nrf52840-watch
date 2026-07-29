@@ -1,8 +1,5 @@
 . (Join-Path $PSScriptRoot "common.ps1")
 
-& (Join-Path $PSScriptRoot "generate-statecharts.ps1")
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
 $gcc = Find-XpackExecutable -PackageName "arm-none-eabi-gcc" -Executable "arm-none-eabi-gcc.exe"
 $cmake = Find-XpackExecutable -PackageName "cmake" -Executable "cmake.exe"
 $ninja = Find-XpackExecutable -PackageName "ninja-build" -Executable "ninja.exe"

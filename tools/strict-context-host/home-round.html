@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<style>
+@font-face {
+  font-family: Roboto;
+  src: url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+}
+@font-face {
+  font-family: Roboto;
+  src: url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+}
+@font-face {
+  font-family: Roboto;
+  src: url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  width: 256px;
+  height: 256px;
+  overflow: hidden;
+  background: #151717;
+}
+button {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+}
+.face {
+  position: relative;
+  width: 256px;
+  height: 256px;
+  overflow: hidden;
+  border-radius: 50%;
+  color: #fff;
+  background: #000;
+  font-family: Roboto, Arial, sans-serif;
+}
+.time-zone {
+  position: absolute;
+  top: 18px;
+  left: 37px;
+  width: 182px;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.time {
+  font-size: 68px;
+  font-weight: 700;
+  line-height: .9;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.line {
+  position: absolute;
+  left: 28px;
+  width: 200px;
+  height: 2px;
+  background: #767676;
+}
+.line.top { top: 88px; }
+.line.middle { top: 133px; }
+.status {
+  position: absolute;
+  top: 90px;
+  left: 29px;
+  width: 198px;
+  height: 41px;
+  display: grid;
+  grid-template-columns: 98px 2px 98px;
+}
+.status-cell {
+  min-height: 41px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+}
+.status-cell svg {
+  width: 27px;
+  height: 27px;
+  flex: none;
+}
+.status-divider {
+  width: 2px;
+  height: 32px;
+  align-self: center;
+  background: #767676;
+}
+.device {
+  position: absolute;
+  top: 136px;
+  left: 28px;
+  width: 200px;
+  height: 67px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+.device-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.device-copy strong {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: .82;
+  letter-spacing: -.015em;
+}
+.device-copy small {
+  margin-top: 5px;
+  color: #9d9d9d;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+}
+.device > svg {
+  width: 29px;
+  height: 29px;
+}
+.bottom {
+  position: absolute;
+  left: 54px;
+  right: 54px;
+  bottom: 18px;
+  height: 35px;
+  display: grid;
+  grid-template-columns: 45px 58px 45px;
+  align-items: center;
+}
+.counter {
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 20px;
+  font-weight: 500;
+}
+.counter svg { width: 23px; height: 23px; }
+.nearby {
+  min-height: 35px;
+  color: #a4a4a4;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+.ecosystem { justify-content: flex-end; }
+.ecosystem-mark {
+  position: relative;
+  width: 25px;
+  height: 25px;
+  display: inline-grid;
+  place-items: center;
+}
+.ecosystem-mark svg { width: 25px; height: 25px; }
+.ecosystem-mark::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+</style>
+</head>
+<body>
+<main class="face">
+  <div class="time-zone"><span class="time">20:42</span></div>
+  <div class="line top"></div>
+  <div class="status">
+    <div class="status-cell">
+      <svg viewBox="0 0 256 256" fill="currentColor"><path d="M200,56H32A24,24,0,0,0,8,80v96a24,24,0,0,0,24,24H200a24,24,0,0,0,24-24V80A24,24,0,0,0,200,56Zm8,120a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H200a8,8,0,0,1,8,8ZM104,96v64a8,8,0,0,1-16,0V96a8,8,0,0,1,16,0ZM64,96v64a8,8,0,0,1-16,0V96a8,8,0,0,1,16,0Zm192,0v64a8,8,0,0,1-16,0V96a8,8,0,0,1,16,0Z"/></svg>
+      <span>78%</span>
+    </div>
+    <div class="status-divider"></div>
+    <div class="status-cell">
+      <svg viewBox="0 0 256 256" fill="currentColor"><path d="M160,40A88.09,88.09,0,0,0,81.29,88.67,64,64,0,1,0,72,216h88a88,88,0,0,0,0-176Zm0,160H72a48,48,0,0,1,0-96c1.1,0,2.2,0,3.29.11A88,88,0,0,0,72,128a8,8,0,0,0,16,0,72,72,0,1,1,72,72Z"/></svg>
+      <span>18°</span>
+    </div>
+  </div>
+  <div class="line middle"></div>
+  <div class="device">
+    <span class="device-copy"><strong>AE-12</strong><small>доступен</small></span>
+    <svg viewBox="0 0 256 256" fill="currentColor"><path d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"/></svg>
+  </div>
+  <div class="bottom">
+    <div class="counter">
+      <svg viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></svg>
+      <span>2</span>
+    </div>
+    <div class="nearby">3 рядом</div>
+    <div class="counter ecosystem">
+      <span class="ecosystem-mark"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M223.68,66.15,135.68,18h0a15.88,15.88,0,0,0-15.36,0l-88,48.17a16,16,0,0,0-8.32,14v95.64a16,16,0,0,0,8.32,14l88,48.17a15.88,15.88,0,0,0,15.36,0l88-48.17a16,16,0,0,0,8.32-14V80.18A16,16,0,0,0,223.68,66.15ZM216,175.82,128,224,40,175.82V80.18L128,32h0l88,48.17Z"/></svg></span>
+      <span>1</span>
+    </div>
+  </div>
+</main>
+</body>
+</html>

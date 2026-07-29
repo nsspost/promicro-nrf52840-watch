@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face{font-family:Roboto;src:url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-latin-500-normal.woff2") format("woff2");font-weight:500;unicode-range:U+0000-024F,U+2000-206F}
+@font-face{font-family:Roboto;src:url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-cyrillic-500-normal.woff2") format("woff2");font-weight:500;unicode-range:U+0400-052F}
+@font-face{font-family:Roboto;src:url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-latin-600-normal.woff2") format("woff2");font-weight:600;unicode-range:U+0000-024F,U+2000-206F}
+@font-face{font-family:Roboto;src:url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-cyrillic-600-normal.woff2") format("woff2");font-weight:600;unicode-range:U+0400-052F}
+@font-face{font-family:Roboto;src:url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-latin-700-normal.woff2") format("woff2");font-weight:700;unicode-range:U+0000-024F,U+2000-206F}
+@font-face{font-family:Roboto;src:url("../../docs/tsehosense-watch-graphics-spec-v1/fonts/source/roboto-cyrillic-700-normal.woff2") format("woff2");font-weight:700;unicode-range:U+0400-052F}
+*{box-sizing:border-box}
+html,body{margin:0;width:1280px;height:7040px;overflow:hidden;background:#000}
+#atlas{display:block;width:1280px;height:7040px}
+</style>
+</head>
+<body>
+<canvas id="atlas" width="1280" height="7040"></canvas>
+<script>
+const profiles = [
+  {size:8, weight:600},
+  {size:10, weight:600},
+  {size:12, weight:500},
+  {size:16, weight:700},
+  {size:20, weight:700},
+  {size:23, weight:600},
+  {size:39, weight:700},
+  {size:64, weight:700, timeOnly:true}
+];
+const codepoints = [];
+for (let cp=0x20; cp<=0x7e; cp++) codepoints.push(cp);
+codepoints.push(0x00b0,0x0401);
+for (let cp=0x0410; cp<=0x044f; cp++) codepoints.push(cp);
+codepoints.push(0x0451,0x2212);
+const timeCodepoints = [..."0123456789:"].map(ch => ch.codePointAt(0));
+const canvas = document.getElementById("atlas");
+const ctx = canvas.getContext("2d", {alpha:false});
+ctx.fillStyle="#000";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+document.fonts.ready.then(() => {
+  profiles.forEach((profile, profileIndex) => {
+    const chars = profile.timeOnly ? timeCodepoints : codepoints;
+    ctx.font = `${profile.weight} ${profile.size}px Roboto`;
+    ctx.textBaseline = "alphabetic";
+    chars.forEach((cp,index) => {
+      const cellX=(index%16)*80;
+      const cellY=(profileIndex*880)+Math.floor(index/16)*80;
+      const ch=String.fromCodePoint(cp);
+      ctx.fillStyle="#fff";
+      ctx.fillText(ch,cellX+4,cellY+68);
+      const advance=Math.round(ctx.measureText(ch).width);
+      ctx.fillStyle="#f00";
+      ctx.fillRect(cellX+4+advance,cellY,1,1);
+    });
+  });
+  document.body.dataset.ready="true";
+});
+</script>
+</body>
+</html>

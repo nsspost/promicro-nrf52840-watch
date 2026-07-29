@@ -1,0 +1,206 @@
+{
+  "coordinateSystem": {
+    "width": 256,
+    "height": 256,
+    "unit": "px",
+    "grid": 4
+  },
+  "tokens": {
+    "background": 0,
+    "foreground": 1,
+    "secondary": 0.62,
+    "stroke": 2,
+    "fontFamily": "Roboto Condensed"
+  },
+  "layouts": {
+    "square-normal": {
+      "clip": "rect",
+      "elements": [
+        {
+          "id": "time",
+          "type": "systemText",
+          "binding": "time.hhmm",
+          "bounds": [12, 11, 232, 88],
+          "fontSize": 92,
+          "fontWeight": 700,
+          "align": "center",
+          "update": "minute"
+        },
+        {
+          "id": "divider.top",
+          "type": "line",
+          "bounds": [14, 101, 228, 2]
+        },
+        {
+          "id": "battery.icon",
+          "type": "systemIcon",
+          "icon": "battery",
+          "bounds": [17, 107, 38, 38]
+        },
+        {
+          "id": "battery.value",
+          "type": "systemText",
+          "binding": "watch.battery.percent",
+          "bounds": [55, 107, 67, 38],
+          "fontSize": 30,
+          "fontWeight": 600
+        },
+        {
+          "id": "weather.icon",
+          "type": "systemIcon",
+          "icon": "cloud",
+          "bounds": [143, 107, 38, 38]
+        },
+        {
+          "id": "weather.value",
+          "type": "systemText",
+          "binding": "weather.temperature",
+          "bounds": [181, 107, 58, 38],
+          "fontSize": 30,
+          "fontWeight": 600
+        },
+        {
+          "id": "divider.middle",
+          "type": "line",
+          "bounds": [14, 150, 228, 2]
+        },
+        {
+          "id": "device.name",
+          "type": "systemText",
+          "binding": "context.currentDevice.label",
+          "bounds": [14, 158, 180, 46],
+          "fontSize": 56,
+          "fontWeight": 700
+        },
+        {
+          "id": "device.state",
+          "type": "systemText",
+          "binding": "context.currentDevice.stateLabel",
+          "bounds": [14, 198, 160, 22],
+          "fontSize": 20,
+          "tone": "secondary"
+        },
+        {
+          "id": "device.open",
+          "type": "systemIcon",
+          "icon": "chevronRight",
+          "bounds": [196, 158, 60, 60]
+        },
+        {
+          "id": "unread.phone",
+          "type": "counter",
+          "binding": "unread.phone",
+          "bounds": [14, 221, 62, 35],
+          "icon": "message",
+          "requiredWhenNonZero": true
+        },
+        {
+          "id": "nearby",
+          "type": "systemText",
+          "binding": "context.nearbyCount",
+          "format": "{value} рядом",
+          "bounds": [76, 221, 104, 35],
+          "fontSize": 18,
+          "align": "center",
+          "tone": "secondary"
+        },
+        {
+          "id": "unread.ecosystem",
+          "type": "counter",
+          "binding": "unread.ecosystem",
+          "bounds": [180, 221, 62, 35],
+          "icon": "ecosystem",
+          "requiredWhenNonZero": true
+        }
+      ]
+    },
+    "round-normal": {
+      "inherits": "square-normal",
+      "clip": "circle",
+      "overrideProfile": "round-256-safe",
+      "safeInsets": [37, 18, 37, 18],
+      "elementOverrides": {
+        "time": {
+          "bounds": [37, 18, 182, 66],
+          "fontSize": 68
+        },
+        "divider.top": {
+          "bounds": [28, 88, 200, 2]
+        },
+        "divider.middle": {
+          "bounds": [28, 133, 200, 2]
+        },
+        "device.name": {
+          "bounds": [28, 140, 160, 38],
+          "fontSize": 42
+        },
+        "device.state": {
+          "bounds": [28, 180, 150, 20],
+          "fontSize": 17
+        },
+        "device.open": {
+          "bounds": [188, 136, 60, 60]
+        },
+        "unread.phone": {
+          "bounds": [54, 203, 45, 35]
+        },
+        "nearby": {
+          "bounds": [99, 203, 58, 35],
+          "fontSize": 14
+        },
+        "unread.ecosystem": {
+          "bounds": [157, 203, 45, 35]
+        }
+      }
+    },
+    "square-ambient": {
+      "clip": "rect",
+      "elements": [
+        {
+          "id": "time",
+          "type": "systemText",
+          "binding": "time.hhmm",
+          "bounds": [12, 74, 232, 94],
+          "fontSize": 88,
+          "fontWeight": 700,
+          "align": "center",
+          "update": "minute"
+        },
+        {
+          "id": "unread.phone",
+          "type": "edgeCounter",
+          "binding": "unread.phone",
+          "bounds": [86, 198, 36, 20],
+          "icon": "message"
+        },
+        {
+          "id": "unread.ecosystem",
+          "type": "edgeCounter",
+          "binding": "unread.ecosystem",
+          "bounds": [134, 198, 36, 20],
+          "icon": "ecosystem"
+        }
+      ]
+    },
+    "round-ambient": {
+      "inherits": "square-ambient",
+      "clip": "circle",
+      "overrideProfile": "round-256-safe",
+      "elementOverrides": {
+        "time": {
+          "bounds": [28, 80, 200, 75],
+          "fontSize": 75
+        }
+      }
+    }
+  },
+  "hitTargets": [
+    ["time", [12, 5, 232, 94], "open.clock"],
+    ["battery", [14, 104, 113, 44], "open.battery"],
+    ["weather", [129, 104, 113, 44], "open.weather"],
+    ["device", [14, 153, 228, 66], "open.currentDevice"],
+    ["unread.phone", [14, 212, 62, 44], "open.phoneNotifications"],
+    ["nearby", [76, 212, 104, 44], "open.nearbyDevices"],
+    ["unread.ecosystem", [180, 212, 62, 44], "open.ecosystemEvents"]
+  ]
+}

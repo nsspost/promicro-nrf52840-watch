@@ -1,0 +1,57 @@
+{
+  "format": "tseho.graphics.layout",
+  "formatVersion": 1,
+  "profileId": "watch.round.compact.256",
+  "shape": "round",
+  "width": 256,
+  "height": 256,
+  "pixelProfile": "mono1",
+  "clip": { "type": "circle", "center": [128, 128], "radius": 128 },
+  "safeArea": { "contentX": 26, "dividerX": 28, "timeX": 37, "bottomX": 54 },
+  "homeNormal": {
+    "regions": [
+      { "id": "time", "bounds": [37, 18, 182, 66], "textRole": "displayTimeRound", "align": "center", "update": "minute" },
+      { "id": "divider.top", "bounds": [28, 88, 200, 2], "colorRole": "dividerStrong" },
+      { "id": "status", "bounds": [29, 90, 198, 41], "columns": [98, 2, 98] },
+      { "id": "divider.middle", "bounds": [28, 133, 200, 2], "colorRole": "dividerStrong" },
+      { "id": "device", "bounds": [28, 136, 200, 67] },
+      { "id": "bottom", "bounds": [54, 203, 148, 35], "columns": [45, 58, 45] }
+    ],
+    "elements": {
+      "status.iconSize": 27,
+      "status.valueTextRole": "statusRound",
+      "status.gap": 5,
+      "status.dividerHeight": 32,
+      "device.nameX": 28,
+      "device.nameTextRole": "deviceRound",
+      "device.stateFontSize": 17,
+      "device.stateOpticalGap": 5,
+      "device.chevronSize": 29,
+      "device.chevronWeight": "bold",
+      "bottom.counterFontSize": 20,
+      "bottom.nearbyFontSize": 14
+    }
+  },
+  "homeAmbient": {
+    "time": { "bounds": [28, 80, 200, 75], "textRole": "displayTimeAmbientRound", "align": "center" },
+    "markersBounds": [86, 198, 84, 20]
+  },
+  "screen": {
+    "contentBounds": [26, 0, 204, 256],
+    "headerHeight": 68,
+    "headerInnerX": 17,
+    "headerDivider": 2,
+    "backHitSize": 44,
+    "listRowHeight": { "min": 55, "parameter": 56 },
+    "deviceHealthHeight": 49,
+    "primaryMetricsHeight": 70,
+    "allParametersHeight": 49,
+    "actionsHeight": 49
+  },
+  "overlays": {
+    "ordinaryToast": { "bounds": [29, 170, 198, 62], "border": 2, "radius": 8 },
+    "important": { "bounds": [0, 0, 256, 256], "padding": 26, "border": 2 },
+    "blocking": { "bounds": [0, 0, 256, 256], "padding": 29, "border": 4 },
+    "command": { "bounds": [0, 0, 256, 256], "padding": [29, 31, 22, 31], "border": 2 }
+  }
+}

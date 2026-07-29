@@ -1,0 +1,68 @@
+{
+  "format": "tseho.graphics.implementation-package",
+  "formatVersion": 1,
+  "packageId": "tsehosense.watch.strict-context.graphics",
+  "version": "1.0.0",
+  "language": "ru",
+  "authority": {
+    "acceptedVisualReference": "reference/atlases/strict-context-watchface-v0.1.1-preview.png",
+    "measuredPrototypeCss": "reference/source/styles.css",
+    "screenFontCorrection": "Roboto"
+  },
+  "targets": [
+    "watch.square.compact.256",
+    "watch.round.compact.256"
+  ],
+  "pixelProfiles": ["mono1", "gray4"],
+  "requiredSemanticRoles": [
+    "time.primary",
+    "watch.battery",
+    "weather.temperature",
+    "context.device.id",
+    "context.device.state",
+    "nearby.count",
+    "unread.phone",
+    "unread.ecosystem",
+    "event.severity",
+    "command.phase"
+  ],
+  "requiredIcons": [
+    "ArrowClockwise",
+    "ArrowSquareOut",
+    "BatteryMedium",
+    "BellSimple",
+    "Broadcast",
+    "CaretLeft",
+    "CaretRight",
+    "ChatCircle",
+    "CheckCircle",
+    "CircleNotch",
+    "Cloud",
+    "Gauge",
+    "HandTap",
+    "Hexagon",
+    "Info",
+    "ListBullets",
+    "LockKey",
+    "MapPin",
+    "Minus",
+    "Plus",
+    "Power",
+    "Radio",
+    "ShieldWarning",
+    "SlidersHorizontal",
+    "StopCircle",
+    "UserSwitch",
+    "Warning",
+    "WarningOctagon",
+    "Waveform",
+    "WifiSlash",
+    "X",
+    "XCircle"
+  ],
+  "budgets": {
+    "mono1FrameBytes": 8192,
+    "peakGraphicsRamBytes": 12288,
+    "maxDirtyRects": 8
+  }
+}

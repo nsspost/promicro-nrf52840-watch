@@ -1,0 +1,37 @@
+{
+  "format": "tsehosense.design-spec",
+  "formatVersion": 1,
+  "packageId": "universal-ui",
+  "version": "0.1.0",
+  "createdAt": "2026-07-23",
+  "language": "ru",
+  "status": "implementation-proposal",
+  "documents": [
+    "README.md",
+    "SOURCE_MAPPING.md",
+    "ADR_PROPOSAL.md",
+    "01_ARCHITECTURE.md",
+    "02_CONTRACTS.md",
+    "03_COMPONENT_CHANGES.md",
+    "04_IDE_AND_PREVIEW.md",
+    "05_EMBEDDED_C_RENDERER.md",
+    "06_CODEX_IMPLEMENTATION_PLAN.md",
+    "AGENTS_UI_IMPLEMENTATION.md",
+    "VALIDATION.md"
+  ],
+  "schemas": [
+    "schemas/display-profile.schema.json",
+    "schemas/presentation-extension.schema.json",
+    "schemas/preview-scenario.schema.json",
+    "schemas/skin-manifest.schema.json",
+    "schemas/ui-view-model.schema.json"
+  ],
+  "referenceExample": "examples/pump2-view-model.json",
+  "safetyInvariants": [
+    "risk-can-only-increase-downstream",
+    "critical-approved-is-not-execution",
+    "blocking-event-preempts-command-surfaces",
+    "desired-state-is-not-confirmed-state",
+    "deferred-execution-disabled-by-default"
+  ]
+}

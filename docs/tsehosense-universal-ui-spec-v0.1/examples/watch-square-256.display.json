@@ -1,0 +1,27 @@
+{
+  "profileId": "watch.square.256.mono1",
+  "shape": "square",
+  "width": 256,
+  "height": 256,
+  "sizeClass": "s",
+  "pixelFormat": "mono1",
+  "inputs": ["touch", "button-back"],
+  "safeArea": {"top": 8, "right": 8, "bottom": 8, "left": 8},
+  "minimumTextPx": 9,
+  "minimumPrimaryTextPx": 18,
+  "minimumHitPx": 44,
+  "budgets": {
+    "framebufferBytes": 8192,
+    "peakRendererRamBytes": 12288,
+    "maxDirtyRects": 8,
+    "maxFps": 1
+  },
+  "capabilities": {
+    "grayLevels": 2,
+    "supportsTouch": true,
+    "supportsAnimation": false,
+    "supportsSparkline": true,
+    "supportsGauge": true
+  }
+}
+
