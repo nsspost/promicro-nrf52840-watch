@@ -1495,9 +1495,16 @@ static void draw_media_position(watch_ui_t *ui, watch_time_t time)
 static void draw_media_play_pause(watch_ui_t *ui)
 {
     gno_fill_rect(ui->graphics, 100, 182, 40, 28, color_background());
-    watch_draw_text(ui->graphics, 115, 192,
-                    ui->media.state == 1u ? "||" : ">",
-                    1u, color_text());
+    if (ui->media.state == 1u) {
+        gno_fill_rect(ui->graphics, 114, 189, 5, 14, color_text());
+        gno_fill_rect(ui->graphics, 122, 189, 5, 14, color_text());
+    } else {
+        for (int row = 0; row < 15; ++row) {
+            int width = (row <= 7) ? (row + 1) : (15 - row);
+            gno_fill_rect(ui->graphics, 116, 189 + row, width, 1,
+                          color_text());
+        }
+    }
 }
 
 static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
