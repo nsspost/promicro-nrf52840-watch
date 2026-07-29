@@ -50,6 +50,7 @@ static watch_ble_status_t watch_ble_status;
 static watch_ble_media_status_t watch_ble_media = {
     .volume = 0xFFu, .shuffle = 0xFFu, .repeat = 0xFFu
 };
+static watch_ble_notifications_t watch_ble_notifications;
 static uint8_t watch_artwork_pixels[WATCH_ARTWORK_BYTES];
 static watch_ble_artwork_status_t watch_ble_artwork = {
     .pixels = watch_artwork_pixels,
@@ -252,11 +253,21 @@ static void watch_link_apply_time(const uint8_t *payload,
 }
 
 static void watch_link_copy_text(char *dst, uint16_t capacity,
-                                 const uint8_t *src, uint8_t length)
+                                 const uint8_t *src, uint16_t length)
 {
     uint16_t count = length < capacity ? length : (uint16_t)(capacity - 1u);
     for (uint16_t i = 0u; i < count; ++i) dst[i] = (char)src[i];
     dst[count] = '\0';
+}
+
+static void watch_notification_copy(watch_ble_notification_t *dst,
+                                    const watch_ble_notification_t *src)
+{
+    dst->id = src->id;
+    dst->category = src->category;
+    for (uint16_t i = 0u; i < sizeof(dst->app); ++i) dst->app[i] = src->app[i];
+    for (uint16_t i = 0u; i < sizeof(dst->title); ++i) dst->title[i] = src->title[i];
+    for (uint16_t i = 0u; i < sizeof(dst->body); ++i) dst->body[i] = src->body[i];
 }
 
 static void watch_link_apply_media_info(const uint8_t *payload, uint16_t length)
@@ -302,6 +313,59 @@ static void watch_link_apply_media_volume(const uint8_t *payload, uint16_t lengt
     if ((payload == NULL) || (length < 1u)) return;
     watch_ble_media.volume = payload[0];
     ++watch_ble_media.revision;
+}
+
+static void watch_link_apply_notification_add(const uint8_t *payload,
+                                              uint16_t length)
+{
+    if ((payload == NULL) || (length < 13u)) return;
+    uint8_t app_length = payload[9];
+    uint8_t title_length = payload[10];
+    uint16_t body_length = tseho_link_read_u16_le(&payload[11]);
+    uint32_t text_length = (uint32_t)app_length + title_length + body_length;
+    if (13u + text_length > length) return;
+    uint32_t id = tseho_link_read_u32_le(payload);
+    uint8_t index = 0u;
+    while ((index < watch_ble_notifications.count) &&
+           (watch_ble_notifications.items[index].id != id)) ++index;
+    if (index == watch_ble_notifications.count) {
+        if (watch_ble_notifications.count < WATCH_NOTIFICATION_CAPACITY) {
+            watch_ble_notifications.count++;
+        } else {
+            index = WATCH_NOTIFICATION_CAPACITY - 1u;
+        }
+    }
+    for (uint8_t i = index; i > 0u; --i) {
+        watch_notification_copy(&watch_ble_notifications.items[i],
+                                &watch_ble_notifications.items[i - 1u]);
+    }
+    watch_ble_notification_t *item = &watch_ble_notifications.items[0];
+    item->id = id;
+    item->category = payload[8];
+    uint16_t offset = 13u;
+    watch_link_copy_text(item->app, sizeof(item->app), &payload[offset], app_length);
+    offset = (uint16_t)(offset + app_length);
+    watch_link_copy_text(item->title, sizeof(item->title), &payload[offset], title_length);
+    offset = (uint16_t)(offset + title_length);
+    watch_link_copy_text(item->body, sizeof(item->body), &payload[offset], body_length);
+    ++watch_ble_notifications.revision;
+}
+
+static void watch_link_apply_notification_remove(const uint8_t *payload,
+                                                 uint16_t length)
+{
+    if ((payload == NULL) || (length != 4u)) return;
+    uint32_t id = tseho_link_read_u32_le(payload);
+    for (uint8_t i = 0u; i < watch_ble_notifications.count; ++i) {
+        if (watch_ble_notifications.items[i].id != id) continue;
+        for (; i + 1u < watch_ble_notifications.count; ++i) {
+            watch_notification_copy(&watch_ble_notifications.items[i],
+                                    &watch_ble_notifications.items[i + 1u]);
+        }
+        watch_ble_notifications.count--;
+        ++watch_ble_notifications.revision;
+        return;
+    }
 }
 
 static void watch_link_apply_artwork_begin(const uint8_t *payload, uint16_t length)
@@ -358,6 +422,10 @@ static void watch_link_handle_frame(
         watch_link_apply_media_state(frame->payload, frame->payload_length);
     } else if (frame->type == TSEHO_LINK_MSG_MEDIA_VOLUME) {
         watch_link_apply_media_volume(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_NOTIFY_ADD) {
+        watch_link_apply_notification_add(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_NOTIFY_REMOVE) {
+        watch_link_apply_notification_remove(frame->payload, frame->payload_length);
     } else if (frame->type == TSEHO_LINK_MSG_MEDIA_ART_BEGIN) {
         watch_link_apply_artwork_begin(frame->payload, frame->payload_length);
     } else if (frame->type == TSEHO_LINK_MSG_MEDIA_ART_CHUNK) {
@@ -579,6 +647,11 @@ const watch_ble_status_t *watch_ble_get_status(void)
 const watch_ble_media_status_t *watch_ble_get_media_status(void)
 {
     return &watch_ble_media;
+}
+
+const watch_ble_notifications_t *watch_ble_get_notifications(void)
+{
+    return &watch_ble_notifications;
 }
 
 const watch_ble_artwork_status_t *watch_ble_get_artwork_status(void)

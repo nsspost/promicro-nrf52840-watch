@@ -7,6 +7,7 @@
 #include <gno/gno.h>
 
 #include "watch/clock.h"
+#include "watch/ble.h"
 #include "watch/ui_demo_model.h"
 
 enum {
@@ -26,7 +27,8 @@ typedef enum {
     WATCH_UI_SCREEN_EVENT_JOURNAL,
     WATCH_UI_SCREEN_EVENT_DETAIL,
     WATCH_UI_SCREEN_DIAGNOSTIC,
-    WATCH_UI_SCREEN_MEDIA
+    WATCH_UI_SCREEN_MEDIA,
+    WATCH_UI_SCREEN_PHONE_NOTIFICATIONS
 } watch_ui_screen_t;
 
 typedef enum {
@@ -120,6 +122,7 @@ typedef struct {
     uint8_t command_demo_outcome;
     uint8_t critical_demo_outcome;
     watch_ui_phone_status_t phone;
+    watch_ble_notifications_t notifications;
     watch_ui_media_status_t media;
     watch_ui_artwork_status_t artwork;
     bool awaiting_artwork;
@@ -155,6 +158,8 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
                                const watch_ui_media_status_t *status);
 bool watch_ui_set_artwork_status(watch_ui_t *ui,
                                  watch_ui_artwork_status_t status);
+bool watch_ui_set_notifications(watch_ui_t *ui,
+                                const watch_ble_notifications_t *notifications);
 bool watch_ui_take_media_command(watch_ui_t *ui, uint8_t *command);
 
 /*

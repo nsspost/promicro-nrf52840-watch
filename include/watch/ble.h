@@ -41,6 +41,27 @@ typedef struct {
     uint32_t revision;
 } watch_ble_media_status_t;
 
+enum {
+    WATCH_NOTIFICATION_CAPACITY = 6,
+    WATCH_NOTIFICATION_APP_BYTES = 25,
+    WATCH_NOTIFICATION_TITLE_BYTES = 65,
+    WATCH_NOTIFICATION_BODY_BYTES = 129
+};
+
+typedef struct {
+    uint32_t id;
+    uint8_t category;
+    char app[WATCH_NOTIFICATION_APP_BYTES];
+    char title[WATCH_NOTIFICATION_TITLE_BYTES];
+    char body[WATCH_NOTIFICATION_BODY_BYTES];
+} watch_ble_notification_t;
+
+typedef struct {
+    watch_ble_notification_t items[WATCH_NOTIFICATION_CAPACITY];
+    uint8_t count;
+    uint32_t revision;
+} watch_ble_notifications_t;
+
 typedef struct {
     const uint8_t *pixels;
     uint16_t width;
@@ -53,6 +74,7 @@ bool watch_ble_init(void);
 void watch_ble_poll(void);
 const watch_ble_status_t *watch_ble_get_status(void);
 const watch_ble_media_status_t *watch_ble_get_media_status(void);
+const watch_ble_notifications_t *watch_ble_get_notifications(void);
 const watch_ble_artwork_status_t *watch_ble_get_artwork_status(void);
 bool watch_ble_send_media_command(uint8_t command);
 

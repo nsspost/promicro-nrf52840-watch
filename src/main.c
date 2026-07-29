@@ -330,6 +330,8 @@ int main(void)
                 .revision = ble_artwork->revision,
                 .valid = ble_artwork->valid
             });
+        (void)watch_ui_set_notifications(
+            &watch_ui_runtime, watch_ble_get_notifications());
         watch_debug_state.heartbeat++;
         time = watch_clock_get();
         watch_debug_state.clock_hour = time.hour;

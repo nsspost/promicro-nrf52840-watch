@@ -44,6 +44,7 @@ typedef enum {
     ACTION_SUBMIT_CRITICAL,
     ACTION_NEXT_CRITICAL_CASE,
     ACTION_OPEN_EVENTS,
+    ACTION_OPEN_PHONE_NOTIFICATIONS,
     ACTION_OPEN_EVENT,
     ACTION_ACK_EVENT,
     ACTION_OPEN_DIAGNOSTIC,
@@ -648,15 +649,18 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
                 ACTION_OPEN_OVERVIEW, 0u, false);
     }
 
+    char notification_count[2] = {'0', '\0'};
+    notification_count[0] = (char)('0' + ui->notifications.count);
     watch_strict_draw_icon(graphics, 45, 178,
                            WATCH_STRICT_ICON_CHAT, color_text());
-    watch_draw_text(graphics, 75, 189, "2", 3u, color_text());
+    watch_draw_text(graphics, 75, 189, notification_count, 3u, color_text());
     text_center(graphics, 120, 190, "3 рядом", 2u, color_muted());
     watch_strict_draw_icon(graphics, 157, 178,
                            WATCH_STRICT_ICON_ECOSYSTEM, color_text());
     gno_fill_rect(graphics, 171, 192, 4, 4, color_text());
     watch_draw_text(graphics, 184, 189, "1", 3u, color_text());
 
+    add_hit(ui, 24, 170, 92, 54, ACTION_OPEN_PHONE_NOTIFICATIONS, 0u, false);
     add_hit(ui, 75, 196, 90, 44, ACTION_OPEN_DEVICES, 0u, false);
     add_hit(ui, 165, 196, 51, 44, ACTION_OPEN_EVENTS, 0u, false);
     add_hit(ui, 88, 3, 64, 44, ACTION_OPEN_DIAGNOSTIC, 0u, false);
@@ -1684,6 +1688,24 @@ static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
     }
 }
 
+static void draw_phone_notifications(watch_ui_t *ui)
+{
+    draw_header(ui, "NOTIFICATIONS", true, color_text());
+    if (ui->notifications.count == 0u) {
+        text_center(ui->graphics, 120, 108, "NO NEW", 3u, color_muted());
+        return;
+    }
+    for (uint8_t i = 0u; i < ui->notifications.count; ++i) {
+        const watch_ble_notification_t *item = &ui->notifications.items[i];
+        int y = 53 + ((int)i * 28);
+        gno_draw_hline(ui->graphics, 28, y + 25, 184, color_line());
+        watch_draw_text(ui->graphics, 31, y, item->app, 1u, color_muted());
+        watch_draw_text(ui->graphics, 31, y + 11,
+                        item->title[0] != '\0' ? item->title : item->body,
+                        2u, color_text());
+    }
+}
+
 static bool render_screen(watch_ui_t *ui, watch_time_t time)
 {
     reset_hits(ui);
@@ -1729,6 +1751,9 @@ static bool render_screen(watch_ui_t *ui, watch_time_t time)
             break;
         case WATCH_UI_SCREEN_MEDIA:
             draw_media_screen(ui, time);
+            break;
+        case WATCH_UI_SCREEN_PHONE_NOTIFICATIONS:
+            draw_phone_notifications(ui);
             break;
         default:
             return false;
@@ -1858,6 +1883,9 @@ static void dispatch_action(watch_ui_t *ui,
         case ACTION_OPEN_EVENTS:
             navigate_to(ui, WATCH_UI_SCREEN_EVENT_JOURNAL);
             break;
+        case ACTION_OPEN_PHONE_NOTIFICATIONS:
+            navigate_to(ui, WATCH_UI_SCREEN_PHONE_NOTIFICATIONS);
+            break;
         case ACTION_OPEN_EVENT:
             (void)watch_ui_present_event(ui, argument);
             break;
@@ -1935,6 +1963,8 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
         .received_packets = 0u,
         .tx_notifications = 0u
     };
+    ui->notifications.count = 0u;
+    ui->notifications.revision = 0u;
     ui->media_position_started_at = 0u;
     ui->displayed_media_position_s = 0xFFFFFFFFu;
     ui->awaiting_artwork = false;
@@ -2273,6 +2303,30 @@ bool watch_ui_set_artwork_status(watch_ui_t *ui,
         if (ui->screen == WATCH_UI_SCREEN_MEDIA) {
             draw_media_artwork(ui, watch_clock_get());
         }
+    }
+    return true;
+}
+
+bool watch_ui_set_notifications(
+    watch_ui_t *ui, const watch_ble_notifications_t *notifications)
+{
+    if ((ui == NULL) || !ui->initialized || (notifications == NULL)) return false;
+    if (ui->notifications.revision == notifications->revision) return true;
+    ui->notifications.count = notifications->count;
+    ui->notifications.revision = notifications->revision;
+    for (uint8_t item = 0u; item < notifications->count; ++item) {
+        ui->notifications.items[item].id = notifications->items[item].id;
+        ui->notifications.items[item].category = notifications->items[item].category;
+        for (uint16_t i = 0u; i < sizeof(ui->notifications.items[item].app); ++i)
+            ui->notifications.items[item].app[i] = notifications->items[item].app[i];
+        for (uint16_t i = 0u; i < sizeof(ui->notifications.items[item].title); ++i)
+            ui->notifications.items[item].title[i] = notifications->items[item].title[i];
+        for (uint16_t i = 0u; i < sizeof(ui->notifications.items[item].body); ++i)
+            ui->notifications.items[item].body[i] = notifications->items[item].body[i];
+    }
+    if ((ui->screen == WATCH_UI_SCREEN_HOME_CONTEXT) ||
+        (ui->screen == WATCH_UI_SCREEN_PHONE_NOTIFICATIONS)) {
+        ui->needs_redraw = true;
     }
     return true;
 }
