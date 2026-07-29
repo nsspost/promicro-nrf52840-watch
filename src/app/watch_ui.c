@@ -641,11 +641,11 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
 
     gno_fill_rect(graphics, 26, 125, 188, 2, color_line());
     if (device->online) {
-        watch_draw_text(graphics, 26, 139,
+        watch_draw_text(graphics, 26, 128,
                         device->source_id, 6u, color_text());
         watch_strict_draw_icon(graphics, 190, 143,
                                WATCH_STRICT_ICON_CARET_RIGHT, color_text());
-        add_hit(ui, 24, 124, 192, 68,
+        add_hit(ui, 24, 124, 192, 46,
                 ACTION_OPEN_OVERVIEW, 0u, false);
     }
 
