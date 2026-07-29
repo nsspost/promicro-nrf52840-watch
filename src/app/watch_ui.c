@@ -581,30 +581,33 @@ static void draw_strict_home_clock(watch_ui_t *ui, watch_time_t time)
     text_center(ui->graphics, 120, 5, clock_text, 9u, color_text());
 }
 
-static void draw_strict_home_phone_status(watch_ui_t *ui)
+static void draw_strict_home_weather_placeholder(watch_ui_t *ui)
 {
     gno_context_t *graphics = ui->graphics;
-    /* The cloud slot is reserved for phone weather; link state lives on rim. */
     gno_fill_rect(graphics, 124, 86, 90, 35, color_background());
     watch_strict_draw_icon(graphics, 126, 87,
                            WATCH_STRICT_ICON_CLOUD, color_muted());
+}
 
-    gno_fill_rect(graphics, 193, 17, 22, 32, color_background());
+static void draw_strict_home_phone_status(watch_ui_t *ui)
+{
+    gno_context_t *graphics = ui->graphics;
+    gno_fill_rect(graphics, 110, 1, 20, 13, color_background());
     gno_color_t link_color = phone_state_online(ui->phone.state) ?
                              color_text() : color_muted();
-    gno_draw_rect(graphics, 196, 20, 16, 22, link_color);
-    gno_draw_line(graphics, 204, 23, 209, 28, link_color);
-    gno_draw_line(graphics, 209, 28, 200, 34, link_color);
-    gno_draw_line(graphics, 200, 34, 209, 40, link_color);
-    gno_draw_line(graphics, 209, 40, 204, 45, link_color);
-    gno_draw_vline(graphics, 204, 23, 23, link_color);
+    gno_draw_rect(graphics, 112, 2, 16, 11, link_color);
+    gno_draw_line(graphics, 120, 3, 124, 6, link_color);
+    gno_draw_line(graphics, 124, 6, 116, 9, link_color);
+    gno_draw_line(graphics, 116, 9, 124, 11, link_color);
+    gno_draw_line(graphics, 124, 11, 120, 12, link_color);
+    gno_draw_vline(graphics, 120, 3, 10, link_color);
     if (ui->phone.state == WATCH_UI_PHONE_READY) {
-        gno_fill_rect(graphics, 198, 22, 12, 18, color_surface_high());
-        gno_draw_line(graphics, 204, 23, 209, 28, color_text());
-        gno_draw_line(graphics, 209, 28, 200, 34, color_text());
-        gno_draw_line(graphics, 200, 34, 209, 40, color_text());
-        gno_draw_line(graphics, 209, 40, 204, 45, color_text());
-        gno_draw_vline(graphics, 204, 23, 23, color_text());
+        gno_fill_rect(graphics, 114, 3, 12, 9, color_surface_high());
+        gno_draw_line(graphics, 120, 3, 124, 6, color_text());
+        gno_draw_line(graphics, 124, 6, 116, 9, color_text());
+        gno_draw_line(graphics, 116, 9, 124, 11, color_text());
+        gno_draw_line(graphics, 124, 11, 120, 12, color_text());
+        gno_draw_vline(graphics, 120, 3, 10, color_text());
     }
 }
 
@@ -624,6 +627,7 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
                            WATCH_STRICT_ICON_BATTERY, color_text());
     watch_draw_text(graphics, 68, 95, battery_text, 4u, color_text());
     gno_fill_rect(graphics, 119, 88, 2, 31, color_line());
+    draw_strict_home_weather_placeholder(ui);
     draw_strict_home_phone_status(ui);
 
     gno_fill_rect(graphics, 26, 125, 188, 2, color_line());
