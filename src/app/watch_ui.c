@@ -632,7 +632,6 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
 
     add_hit(ui, 75, 196, 90, 44, ACTION_OPEN_DEVICES, 0u, false);
     add_hit(ui, 165, 196, 51, 44, ACTION_OPEN_EVENTS, 0u, false);
-    add_hit(ui, 24, 196, 44, 44, ACTION_OPEN_MEDIA, 0u, false);
     add_hit(ui, 88, 3, 64, 44, ACTION_OPEN_DIAGNOSTIC, 0u, false);
 }
 
@@ -1421,7 +1420,7 @@ static void draw_media_texts_transition(watch_ui_t *ui,
                           previous_artist == NULL ? NULL :
                           media_text_or(previous_artist, "Gadgetbridge"),
                           media_text_or(current_artist, "Gadgetbridge"),
-                          1u, color_muted(), previous_phase, current_phase);
+                          2u, color_muted(), previous_phase, current_phase);
 }
 
 static void draw_media_artwork(watch_ui_t *ui)
@@ -1446,52 +1445,69 @@ static void draw_media_artwork(watch_ui_t *ui)
     }
 }
 
-static void draw_media_position(watch_ui_t *ui)
+static uint32_t media_display_position(const watch_ui_t *ui,
+                                       watch_time_t time)
+{
+    uint32_t position = ui->media.position_s;
+    if (ui->media.state == 1u) {
+        position += elapsed_ticks(ui->media_position_started_at,
+                                  time_ticks(time)) /
+                    WATCH_CLOCK_SUBSECOND_HZ;
+    }
+    if (ui->media.duration_s != 0u && position > ui->media.duration_s) {
+        position = ui->media.duration_s;
+    }
+    return position;
+}
+
+static void draw_media_position(watch_ui_t *ui, watch_time_t time)
 {
     const watch_ui_media_status_t *media = &ui->media;
     char time_text[6] = "00:00";
-    uint32_t minutes = media->position_s / 60u;
-    uint32_t seconds = media->position_s % 60u;
+    uint32_t position = media_display_position(ui, time);
+    uint32_t minutes = position / 60u;
+    uint32_t seconds = position % 60u;
     time_text[0] = (char)('0' + ((minutes / 10u) % 10u));
     time_text[1] = (char)('0' + (minutes % 10u));
     time_text[3] = (char)('0' + (seconds / 10u));
     time_text[4] = (char)('0' + (seconds % 10u));
-    gno_fill_rect(ui->graphics, 32, 162, 48, 12, color_background());
-    watch_draw_text(ui->graphics, 32, 162, time_text, 1u, color_muted());
+    gno_fill_rect(ui->graphics, 32, 148, 72, 18, color_background());
+    watch_draw_text(ui->graphics, 32, 148, time_text, 2u, color_muted());
     uint16_t progress = media->duration_s == 0u ? 0u :
-        (uint16_t)((uint32_t)172u * media->position_s / media->duration_s);
+        (uint16_t)((uint32_t)172u * position / media->duration_s);
     if (progress > 172u) progress = 172u;
-    gno_fill_rect(ui->graphics, 34, 183, 172, 2, color_background());
-    gno_fill_rect(ui->graphics, 34, 183, progress, 2, color_info());
+    gno_fill_rect(ui->graphics, 34, 170, 172, 2, color_background());
+    gno_fill_rect(ui->graphics, 34, 170, progress, 2, color_info());
+    ui->displayed_media_position_s = position;
 }
 
 static void draw_media_play_pause(watch_ui_t *ui)
 {
-    gno_fill_rect(ui->graphics, 95, 200, 50, 28, color_background());
-    watch_draw_text(ui->graphics, 111, 207,
+    gno_fill_rect(ui->graphics, 100, 182, 40, 28, color_background());
+    watch_draw_text(ui->graphics, 115, 192,
                     ui->media.state == 1u ? "||" : ">",
                     1u, color_text());
 }
 
 static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
 {
-    draw_header(ui, "МУЗЫКА", true, color_text());
+    text_center(ui->graphics, 120, 26, "МУЗЫКА", 3u, color_text());
     gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
     draw_media_artwork(ui);
     draw_media_texts_transition(ui, NULL, NULL,
                                 ui->media.track, ui->media.artist,
                                 0u, time_ticks(time) / 2u);
-    gno_draw_rect(ui->graphics, 32, 181, 176, 6, color_line());
-    draw_media_position(ui);
-    gno_draw_rect(ui->graphics, 28, 199, 52, 30, color_info());
-    gno_draw_rect(ui->graphics, 94, 199, 52, 30, color_accent());
-    gno_draw_rect(ui->graphics, 160, 199, 52, 30, color_info());
-    add_hit(ui, 28, 199, 52, 30, ACTION_MEDIA_PREVIOUS, 3u, false);
-    add_hit(ui, 94, 199, 52, 30, ACTION_MEDIA_PLAY_PAUSE, 0u, false);
-    add_hit(ui, 160, 199, 52, 30, ACTION_MEDIA_NEXT, 4u, false);
-    watch_draw_text(ui->graphics, 45, 207, "|<", 1u, color_text());
+    gno_draw_rect(ui->graphics, 32, 168, 176, 6, color_line());
+    draw_media_position(ui, time);
+    gno_draw_rect(ui->graphics, 46, 181, 42, 30, color_info());
+    gno_draw_rect(ui->graphics, 99, 181, 42, 30, color_accent());
+    gno_draw_rect(ui->graphics, 152, 181, 42, 30, color_info());
+    add_hit(ui, 46, 181, 42, 30, ACTION_MEDIA_PREVIOUS, 3u, false);
+    add_hit(ui, 99, 181, 42, 30, ACTION_MEDIA_PLAY_PAUSE, 0u, false);
+    add_hit(ui, 152, 181, 42, 30, ACTION_MEDIA_NEXT, 4u, false);
+    watch_draw_text(ui->graphics, 59, 192, "|<", 1u, color_text());
     draw_media_play_pause(ui);
-    watch_draw_text(ui->graphics, 177, 207, ">|", 1u, color_text());
+    watch_draw_text(ui->graphics, 165, 192, ">|", 1u, color_text());
 }
 
 static bool render_screen(watch_ui_t *ui, watch_time_t time)
@@ -1728,6 +1744,8 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
     ui->hit_count = 0u;
     ui->pressed_hit = -1;
     ui->touch_down = false;
+    ui->touch_started_x = 0u;
+    ui->touch_started_y = 0u;
     ui->hold_active = false;
     ui->hold_started_at = 0u;
     ui->hold_progress = 0u;
@@ -1742,6 +1760,8 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
         .received_packets = 0u,
         .tx_notifications = 0u
     };
+    ui->media_position_started_at = 0u;
+    ui->displayed_media_position_s = 0xFFFFFFFFu;
     ui->phase_started_at = 0u;
     ui->displayed_time = (watch_time_t) {
         .hour = 0xFFu,
@@ -1821,6 +1841,10 @@ bool watch_ui_update(watch_ui_t *ui, watch_time_t time)
     }
 
     if (ui->screen == WATCH_UI_SCREEN_MEDIA) {
+        uint32_t media_position = media_display_position(ui, time);
+        if (media_position != ui->displayed_media_position_s) {
+            draw_media_position(ui, time);
+        }
         if ((time_ticks(time) / 2u) !=
             (time_ticks(ui->displayed_time) / 2u)) {
             uint32_t previous_phase = time_ticks(ui->displayed_time) / 2u;
@@ -1853,6 +1877,8 @@ bool watch_ui_process_touch(watch_ui_t *ui,
     uint32_t now = time_ticks(time);
 
     if (down && !ui->touch_down) {
+        ui->touch_started_x = x;
+        ui->touch_started_y = y;
         ui->pressed_hit = find_hit(ui, x, y);
         if (ui->pressed_hit >= 0) {
             watch_ui_hit_target_t *target =
@@ -1893,7 +1919,21 @@ bool watch_ui_process_touch(watch_ui_t *ui,
             }
         }
     } else if (!down && ui->touch_down) {
-        if (ui->pressed_hit >= 0) {
+        int delta_x = (int)x - (int)ui->touch_started_x;
+        int delta_y = (int)y - (int)ui->touch_started_y;
+        int horizontal = (delta_x < 0) ? -delta_x : delta_x;
+        int vertical = (delta_y < 0) ? -delta_y : delta_y;
+        bool consumed_swipe = false;
+        if (horizontal >= 48 && horizontal > vertical) {
+            if (ui->screen == WATCH_UI_SCREEN_HOME_CONTEXT && delta_x > 0) {
+                navigate_to(ui, WATCH_UI_SCREEN_MEDIA);
+                consumed_swipe = true;
+            } else if (ui->screen == WATCH_UI_SCREEN_MEDIA && delta_x < 0) {
+                navigate_back(ui);
+                consumed_swipe = true;
+            }
+        }
+        if (!consumed_swipe && ui->pressed_hit >= 0) {
             watch_ui_hit_target_t target =
                 ui->hits[(uint8_t)ui->pressed_hit];
             if (!target.requires_hold && point_in_rect(x, y, &target)) {
@@ -1975,6 +2015,7 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
         ui->media.volume = status->volume;
         ui->media.duration_s = status->duration_s;
         ui->media.position_s = status->position_s;
+        ui->media_position_started_at = time_ticks(now);
         ui->media.revision = status->revision;
         for (uint16_t i = 0u; i < sizeof(ui->media.artist); ++i) {
             ui->media.artist[i] = status->artist[i];
@@ -1985,7 +2026,7 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
             if (status->track[i] == '\0') break;
         }
         if (media_visible) {
-            draw_media_position(ui);
+            draw_media_position(ui, now);
             draw_media_play_pause(ui);
             ui->displayed_time = now;
         }

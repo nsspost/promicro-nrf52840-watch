@@ -108,6 +108,8 @@ typedef struct {
     uint8_t hit_count;
     int8_t pressed_hit;
     bool touch_down;
+    uint16_t touch_started_x;
+    uint16_t touch_started_y;
     bool hold_active;
     uint32_t hold_started_at;
     uint8_t hold_progress;
@@ -121,6 +123,8 @@ typedef struct {
     watch_ui_artwork_status_t artwork;
     uint8_t media_command;
     bool media_command_pending;
+    uint32_t media_position_started_at;
+    uint32_t displayed_media_position_s;
     uint32_t phase_started_at;
     watch_time_t displayed_time;
     bool initialized;
