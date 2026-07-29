@@ -1403,6 +1403,17 @@ static const char *media_text_or(const char *text, const char *fallback)
     return (text != NULL && text[0] != '\0') ? text : fallback;
 }
 
+static bool media_text_equal(const char *left, const char *right)
+{
+    if ((left == NULL) || (right == NULL)) return left == right;
+    while (*left == *right) {
+        if (*left == '\0') return true;
+        ++left;
+        ++right;
+    }
+    return false;
+}
+
 static void draw_media_texts_transition(watch_ui_t *ui,
                                         const char *previous_track,
                                         const char *previous_artist,
@@ -1762,6 +1773,7 @@ bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics)
     };
     ui->media_position_started_at = 0u;
     ui->displayed_media_position_s = 0xFFFFFFFFu;
+    ui->awaiting_artwork = false;
     ui->phase_started_at = 0u;
     ui->displayed_time = (watch_time_t) {
         .hour = 0xFFu,
@@ -2003,6 +2015,9 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
     if (ui == NULL || !ui->initialized || status == NULL) return false;
     if (ui->media.revision != status->revision) {
         bool media_visible = (ui->screen == WATCH_UI_SCREEN_MEDIA);
+        bool track_changed =
+            !media_text_equal(ui->media.track, status->track) ||
+            !media_text_equal(ui->media.artist, status->artist);
         watch_time_t now = watch_clock_get();
         if (media_visible) {
             draw_media_texts_transition(
@@ -2025,6 +2040,11 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
             ui->media.track[i] = status->track[i];
             if (status->track[i] == '\0') break;
         }
+        if (track_changed) {
+            ui->awaiting_artwork = true;
+            ui->artwork.valid = false;
+            if (media_visible) draw_media_artwork(ui);
+        }
         if (media_visible) {
             draw_media_position(ui, now);
             draw_media_play_pause(ui);
@@ -2038,9 +2058,14 @@ bool watch_ui_set_artwork_status(watch_ui_t *ui,
                                  watch_ui_artwork_status_t status)
 {
     if (ui == NULL || !ui->initialized) return false;
+    if (ui->awaiting_artwork &&
+        status.revision == ui->artwork.revision) {
+        return true;
+    }
     if (ui->artwork.revision != status.revision ||
         ui->artwork.valid != status.valid) {
         ui->artwork = status;
+        if (status.valid) ui->awaiting_artwork = false;
         if (ui->screen == WATCH_UI_SCREEN_MEDIA) draw_media_artwork(ui);
     }
     return true;

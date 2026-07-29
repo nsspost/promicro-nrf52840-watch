@@ -121,6 +121,7 @@ typedef struct {
     watch_ui_phone_status_t phone;
     watch_ui_media_status_t media;
     watch_ui_artwork_status_t artwork;
+    bool awaiting_artwork;
     uint8_t media_command;
     bool media_command_pending;
     uint32_t media_position_started_at;
