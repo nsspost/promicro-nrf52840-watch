@@ -23,7 +23,6 @@ add_executable(watch_firmware
     src/gui/strict_context_text.c
     src/gui/watch_text.c
     src/platform/clock_nrf52840.c
-    src/platform/freestanding_memory.c
     src/protocol/tseho_link.c
 )
 
@@ -113,6 +112,11 @@ target_link_options(watch_firmware PRIVATE
 set_target_properties(watch_firmware PROPERTIES SUFFIX ".elf")
 
 include(cmake/WatchDependencies.cmake)
+
+# Keep the portable C memory routines in the platform runtime, after the
+# firmware and NOG_C objects that reference them. --gc-sections retains only
+# the specific newlib-nano objects actually used by this image.
+target_link_libraries(watch_firmware PRIVATE c_nano gcc nosys)
 
 add_custom_command(TARGET watch_firmware POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} -O ihex
