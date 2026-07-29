@@ -3611,3 +3611,69 @@ uint8_t watch_strict_text_line_height(watch_strict_text_style_t style)
 {
     return get_font(style)->line_height;
 }
+
+static void strict_mask_set(uint8_t *bits, uint32_t index)
+{
+    bits[index >> 3u] |= (uint8_t)(1u << (index & 7u));
+}
+
+static bool watch_strict_rasterize_mask_impl(uint8_t *bits,
+                                              size_t bits_size,
+                                              uint16_t width,
+                                              uint16_t height,
+                                              int x, int y,
+                                              const char *text,
+                                              watch_strict_text_style_t style,
+                                              bool clear)
+{
+    size_t required = ((size_t)width * height + 7u) / 8u;
+    if ((bits == NULL) || (text == NULL) || (bits_size < required)) {
+        return false;
+    }
+    if (clear) {
+        for (size_t i = 0u; i < required; ++i) bits[i] = 0u;
+    }
+
+    const strict_font_t *font = get_font(style);
+    int pen_x = x;
+    while (*text != '\0') {
+        const strict_glyph_t *glyph = find_glyph(font,
+                                                   next_codepoint(&text));
+        if (glyph == NULL) continue;
+        for (uint8_t row = 0u; row < glyph->height; ++row) {
+            int target_y = y + glyph->y_offset + row;
+            if ((target_y < 0) || (target_y >= height)) continue;
+            const uint8_t *source = font->bitmap + glyph->bitmap_offset +
+                ((size_t)row * ((glyph->width + 7u) / 8u));
+            for (uint8_t column = 0u; column < glyph->width; ++column) {
+                if ((source[column >> 3u] &
+                     (uint8_t)(0x80u >> (column & 7u))) == 0u) continue;
+                int target_x = pen_x + glyph->x_offset + column;
+                if ((target_x >= 0) && (target_x < width)) {
+                    strict_mask_set(bits, (uint32_t)target_y * width +
+                                    (uint32_t)target_x);
+                }
+            }
+        }
+        pen_x += glyph->advance;
+    }
+    return true;
+}
+
+bool watch_strict_rasterize_mask(uint8_t *bits, size_t bits_size,
+                                 uint16_t width, uint16_t height,
+                                 int x, int y, const char *text,
+                                 watch_strict_text_style_t style)
+{
+    return watch_strict_rasterize_mask_impl(bits, bits_size, width, height,
+                                            x, y, text, style, true);
+}
+
+bool watch_strict_rasterize_mask_add(uint8_t *bits, size_t bits_size,
+                                     uint16_t width, uint16_t height,
+                                     int x, int y, const char *text,
+                                     watch_strict_text_style_t style)
+{
+    return watch_strict_rasterize_mask_impl(bits, bits_size, width, height,
+                                            x, y, text, style, false);
+}

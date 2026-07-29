@@ -561,13 +561,8 @@ static void draw_home(watch_ui_t *ui, watch_time_t time)
     add_hit(ui, 88, 6, 64, 38, ACTION_OPEN_DIAGNOSTIC, 0u, false);
 }
 
-static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
+static void draw_strict_home_clock(watch_ui_t *ui, watch_time_t time)
 {
-    gno_context_t *graphics = ui->graphics;
-    const watch_ui_device_t *device = &ui->model.devices[0];
-    const watch_ui_device_t *local = &ui->model.devices[2];
-    char battery_text[6];
-    char packet_text[12];
     char clock_text[6] = {
         (char)('0' + (time.hour / 10u)),
         (char)('0' + (time.hour % 10u)),
@@ -576,38 +571,53 @@ static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
         (char)('0' + (time.minute % 10u)),
         '\0'
     };
+    gno_fill_rect(ui->graphics, 26, 5, 188, 76, color_background());
+    text_center(ui->graphics, 120, 5, clock_text, 9u, color_text());
+}
 
-    format_percent_from_tenths(local->metrics[0].value_tenths, battery_text);
+static void draw_strict_home_phone_status(watch_ui_t *ui)
+{
+    gno_context_t *graphics = ui->graphics;
+    char packet_text[12];
+    uint8_t length = 0u;
+    uint32_t packets = ui->phone.received_packets +
+                       ui->phone.tx_notifications;
+    if (packets > 999u) packets = 999u;
+    append_unsigned(packet_text, &length, (uint16_t)packets);
+    packet_text[length] = '\0';
 
-    text_center(graphics, 120, 5, clock_text, 9u, color_text());
-    gno_fill_rect(graphics, 26, 83, 188, 2, color_line());
-
-    watch_strict_draw_icon(graphics, 34, 87,
-                           WATCH_STRICT_ICON_BATTERY, color_text());
-    watch_draw_text(graphics, 68, 95, battery_text, 4u, color_text());
-    gno_fill_rect(graphics, 119, 88, 2, 31, color_line());
+    gno_fill_rect(graphics, 124, 86, 90, 35, color_background());
     watch_strict_draw_icon(graphics, 126, 87,
                            WATCH_STRICT_ICON_CLOUD, color_text());
     watch_draw_text(graphics, 160, 92,
                     phone_state_label(ui->phone.state), 3u,
                     phone_state_online(ui->phone.state) ?
                     color_text() : color_muted());
-    {
-        uint8_t length = 0u;
-        uint32_t packets =
-            ui->phone.received_packets + ui->phone.tx_notifications;
-        if (packets > 999u) {
-            packets = 999u;
-        }
-        append_unsigned(packet_text, &length, (uint16_t)packets);
-        packet_text[length] = '\0';
-    }
     watch_draw_text(graphics, 160, 112, packet_text, 1u, color_muted());
     if (ui->phone.state == WATCH_UI_PHONE_READY) {
         gno_fill_rect(graphics, 190, 95, 5, 5, color_text());
     } else {
         gno_draw_rect(graphics, 190, 95, 5, 5, color_muted());
     }
+}
+
+static void draw_strict_home(watch_ui_t *ui, watch_time_t time)
+{
+    gno_context_t *graphics = ui->graphics;
+    const watch_ui_device_t *device = &ui->model.devices[0];
+    const watch_ui_device_t *local = &ui->model.devices[2];
+    char battery_text[6];
+
+    format_percent_from_tenths(local->metrics[0].value_tenths, battery_text);
+
+    draw_strict_home_clock(ui, time);
+    gno_fill_rect(graphics, 26, 83, 188, 2, color_line());
+
+    watch_strict_draw_icon(graphics, 34, 87,
+                           WATCH_STRICT_ICON_BATTERY, color_text());
+    watch_draw_text(graphics, 68, 95, battery_text, 4u, color_text());
+    gno_fill_rect(graphics, 119, 88, 2, 31, color_line());
+    draw_strict_home_phone_status(ui);
 
     gno_fill_rect(graphics, 26, 125, 188, 2, color_line());
     if (device->online) {
@@ -1306,6 +1316,33 @@ static bool media_mask_get(const uint8_t *mask, uint16_t index)
     return (mask[index >> 3] & (uint8_t)(1u << (index & 7u))) != 0u;
 }
 
+static void media_rasterize_text(uint8_t *mask, int x, const char *text,
+                                 uint8_t scale, bool append)
+{
+    if (active_skin == WATCH_UI_SKIN_STRICT_CONTEXT) {
+        watch_strict_text_style_t style = strict_style_from_scale(scale);
+        if (append) {
+            (void)watch_strict_rasterize_mask_add(
+                mask, MEDIA_TEXT_MASK_BYTES, MEDIA_TEXT_WIDTH,
+                MEDIA_TEXT_HEIGHT, x, 0, text, style);
+        } else {
+            (void)watch_strict_rasterize_mask(
+                mask, MEDIA_TEXT_MASK_BYTES, MEDIA_TEXT_WIDTH,
+                MEDIA_TEXT_HEIGHT, x, 0, text, style);
+        }
+        return;
+    }
+    if (append) {
+        (void)watch_text_rasterize_mask_add(
+            mask, MEDIA_TEXT_MASK_BYTES, MEDIA_TEXT_WIDTH,
+            MEDIA_TEXT_HEIGHT, x, 0, text, scale);
+    } else {
+        (void)watch_text_rasterize_mask(
+            mask, MEDIA_TEXT_MASK_BYTES, MEDIA_TEXT_WIDTH,
+            MEDIA_TEXT_HEIGHT, x, 0, text, scale);
+    }
+}
+
 static void draw_media_delta_text(gno_context_t *graphics,
                                   media_text_lane_t *lane,
                                   int x, int y, const char *text,
@@ -1313,20 +1350,16 @@ static void draw_media_delta_text(gno_context_t *graphics,
                                   uint32_t phase)
 {
     uint8_t next[MEDIA_TEXT_MASK_BYTES];
-    int text_width = watch_text_width(text, scale);
+    int text_width = skin_text_width(text, scale);
     int text_x = 0;
     if (text_width > MEDIA_TEXT_WIDTH) {
         int cycle = text_width + 20;
         text_x = -(int)((phase * 2u) % (uint32_t)cycle);
     }
-    (void)watch_text_rasterize_mask(next, sizeof(next),
-                                    MEDIA_TEXT_WIDTH, MEDIA_TEXT_HEIGHT,
-                                    text_x, 0, text, scale);
+    media_rasterize_text(next, text_x, text, scale, false);
     if (text_width > MEDIA_TEXT_WIDTH) {
-        (void)watch_text_rasterize_mask_add(next, sizeof(next),
-                                            MEDIA_TEXT_WIDTH, MEDIA_TEXT_HEIGHT,
-                                            text_x + text_width + 20, 0,
-                                            text, scale);
+        media_rasterize_text(next, text_x + text_width + 20, text,
+                             scale, true);
     }
 
     for (uint16_t row = 0u; row < MEDIA_TEXT_HEIGHT; ++row) {
@@ -1373,21 +1406,10 @@ static void draw_media_texts(watch_ui_t *ui, watch_time_t time)
                           1u, color_muted(), phase);
 }
 
-static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
+static void draw_media_artwork(watch_ui_t *ui)
 {
     const watch_ui_media_status_t *media = &ui->media;
-    char time_text[6] = "00:00";
-    uint32_t position = media->position_s;
-    uint32_t minutes = position / 60u;
-    uint32_t seconds = position % 60u;
-    time_text[0] = (char)('0' + ((minutes / 10u) % 10u));
-    time_text[1] = (char)('0' + (minutes % 10u));
-    time_text[3] = (char)('0' + (seconds / 10u));
-    time_text[4] = (char)('0' + (seconds % 10u));
-    media_track_lane.valid = false;
-    media_artist_lane.valid = false;
-    draw_header(ui, "МУЗЫКА", true, color_text());
-    gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
+    gno_fill_rect(ui->graphics, 34, 61, 80, 80, color_background());
     if (ui->artwork.valid && ui->artwork.pixels != NULL &&
         ui->artwork.width == 80u && ui->artwork.height == 80u) {
         gno_bitmap_t artwork = {
@@ -1404,13 +1426,45 @@ static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
                         media->state == 1u ? ">" : "||", 4u,
                         color_text());
     }
-    draw_media_texts(ui, time);
+}
+
+static void draw_media_position(watch_ui_t *ui)
+{
+    const watch_ui_media_status_t *media = &ui->media;
+    char time_text[6] = "00:00";
+    uint32_t minutes = media->position_s / 60u;
+    uint32_t seconds = media->position_s % 60u;
+    time_text[0] = (char)('0' + ((minutes / 10u) % 10u));
+    time_text[1] = (char)('0' + (minutes % 10u));
+    time_text[3] = (char)('0' + (seconds / 10u));
+    time_text[4] = (char)('0' + (seconds % 10u));
+    gno_fill_rect(ui->graphics, 32, 162, 48, 12, color_background());
     watch_draw_text(ui->graphics, 32, 162, time_text, 1u, color_muted());
-    gno_draw_rect(ui->graphics, 32, 181, 176, 6, color_line());
     uint16_t progress = media->duration_s == 0u ? 0u :
         (uint16_t)((uint32_t)172u * media->position_s / media->duration_s);
     if (progress > 172u) progress = 172u;
+    gno_fill_rect(ui->graphics, 34, 183, 172, 2, color_background());
     gno_fill_rect(ui->graphics, 34, 183, progress, 2, color_info());
+}
+
+static void draw_media_play_pause(watch_ui_t *ui)
+{
+    gno_fill_rect(ui->graphics, 95, 200, 50, 28, color_background());
+    watch_draw_text(ui->graphics, 111, 207,
+                    ui->media.state == 1u ? "||" : ">",
+                    1u, color_text());
+}
+
+static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
+{
+    media_track_lane.valid = false;
+    media_artist_lane.valid = false;
+    draw_header(ui, "МУЗЫКА", true, color_text());
+    gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
+    draw_media_artwork(ui);
+    draw_media_texts(ui, time);
+    gno_draw_rect(ui->graphics, 32, 181, 176, 6, color_line());
+    draw_media_position(ui);
     gno_draw_rect(ui->graphics, 28, 199, 52, 30, color_info());
     gno_draw_rect(ui->graphics, 94, 199, 52, 30, color_accent());
     gno_draw_rect(ui->graphics, 160, 199, 52, 30, color_info());
@@ -1418,8 +1472,7 @@ static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
     add_hit(ui, 94, 199, 52, 30, ACTION_MEDIA_PLAY_PAUSE, 0u, false);
     add_hit(ui, 160, 199, 52, 30, ACTION_MEDIA_NEXT, 4u, false);
     watch_draw_text(ui->graphics, 45, 207, "|<", 1u, color_text());
-    watch_draw_text(ui->graphics, 111, 207, media->state == 1u ? "||" : ">",
-                    1u, color_text());
+    draw_media_play_pause(ui);
     watch_draw_text(ui->graphics, 177, 207, ">|", 1u, color_text());
 }
 
@@ -1479,6 +1532,9 @@ static bool render_screen(watch_ui_t *ui, watch_time_t time)
     }
     ui->displayed_time = time;
     ui->needs_redraw = false;
+    ui->home_phone_dirty = false;
+    ui->media_status_dirty = false;
+    ui->media_artwork_dirty = false;
     return true;
 }
 
@@ -1717,13 +1773,15 @@ bool watch_ui_update(watch_ui_t *ui, watch_time_t time)
         return render_screen(ui, time);
     }
 
-    if (ui->screen == WATCH_UI_SCREEN_HOME_CONTEXT ||
-        ui->screen == WATCH_UI_SCREEN_DIAGNOSTIC) {
+    if (ui->screen == WATCH_UI_SCREEN_HOME_CONTEXT) {
         if (ui->skin == WATCH_UI_SKIN_STRICT_CONTEXT) {
             if (time.minute != ui->displayed_time.minute ||
                 time.hour != ui->displayed_time.hour) {
-                ui->needs_redraw = true;
-                return render_screen(ui, time);
+                draw_strict_home_clock(ui, time);
+            }
+            if (ui->home_phone_dirty) {
+                draw_strict_home_phone_status(ui);
+                ui->home_phone_dirty = false;
             }
             ui->displayed_time = time;
             return true;
@@ -1739,10 +1797,29 @@ bool watch_ui_update(watch_ui_t *ui, watch_time_t time)
         ui->displayed_time = time;
     }
 
-    if (ui->screen == WATCH_UI_SCREEN_MEDIA &&
-        (time_ticks(time) / 2u) != (time_ticks(ui->displayed_time) / 2u)) {
-        draw_media_texts(ui, time);
-        ui->displayed_time = time;
+    if (ui->screen == WATCH_UI_SCREEN_DIAGNOSTIC &&
+        (time.minute != ui->displayed_time.minute ||
+         time.hour != ui->displayed_time.hour)) {
+        ui->needs_redraw = true;
+        return render_screen(ui, time);
+    }
+
+    if (ui->screen == WATCH_UI_SCREEN_MEDIA) {
+        if (ui->media_artwork_dirty) {
+            draw_media_artwork(ui);
+            ui->media_artwork_dirty = false;
+        }
+        if (ui->media_status_dirty) {
+            draw_media_texts(ui, time);
+            draw_media_position(ui);
+            draw_media_play_pause(ui);
+            ui->media_status_dirty = false;
+        }
+        if ((time_ticks(time) / 2u) !=
+            (time_ticks(ui->displayed_time) / 2u)) {
+            draw_media_texts(ui, time);
+            ui->displayed_time = time;
+        }
     }
 
     if (gno_has_error(ui->graphics)) {
@@ -1859,8 +1936,10 @@ bool watch_ui_set_phone_status(watch_ui_t *ui,
         ui->phone.received_packets != status.received_packets ||
         ui->phone.tx_notifications != status.tx_notifications) {
         ui->phone = status;
-        if (ui->screen == WATCH_UI_SCREEN_HOME_CONTEXT ||
-            ui->screen == WATCH_UI_SCREEN_DIAGNOSTIC) {
+        if (ui->screen == WATCH_UI_SCREEN_HOME_CONTEXT &&
+            ui->skin == WATCH_UI_SKIN_STRICT_CONTEXT) {
+            ui->home_phone_dirty = true;
+        } else if (ui->screen == WATCH_UI_SCREEN_DIAGNOSTIC) {
             ui->needs_redraw = true;
         }
     }
@@ -1885,7 +1964,7 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
             ui->media.track[i] = status->track[i];
             if (status->track[i] == '\0') break;
         }
-        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->needs_redraw = true;
+        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->media_status_dirty = true;
     }
     return true;
 }
@@ -1897,7 +1976,7 @@ bool watch_ui_set_artwork_status(watch_ui_t *ui,
     if (ui->artwork.revision != status.revision ||
         ui->artwork.valid != status.valid) {
         ui->artwork = status;
-        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->needs_redraw = true;
+        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->media_artwork_dirty = true;
     }
     return true;
 }

@@ -125,6 +125,9 @@ typedef struct {
     watch_time_t displayed_time;
     bool initialized;
     bool needs_redraw;
+    bool home_phone_dirty;
+    bool media_status_dirty;
+    bool media_artwork_dirty;
 } watch_ui_t;
 
 bool watch_ui_init(watch_ui_t *ui, gno_context_t *graphics);
