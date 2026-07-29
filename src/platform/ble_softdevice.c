@@ -20,6 +20,9 @@
 #define WATCH_LINK_SERVICE_UUID   0x0001u
 #define WATCH_LINK_RX_UUID        0x0002u
 #define WATCH_LINK_TX_UUID        0x0003u
+#define WATCH_ARTWORK_WIDTH        80u
+#define WATCH_ARTWORK_HEIGHT       80u
+#define WATCH_ARTWORK_BYTES        (WATCH_ARTWORK_WIDTH * WATCH_ARTWORK_HEIGHT * 2u)
 
 static const uint8_t watch_device_name[] = "Tseho Watch";
 static const ble_uuid128_t watch_link_base_uuid = {
@@ -47,6 +50,14 @@ static watch_ble_status_t watch_ble_status;
 static watch_ble_media_status_t watch_ble_media = {
     .volume = 0xFFu, .shuffle = 0xFFu, .repeat = 0xFFu
 };
+static uint8_t watch_artwork_pixels[WATCH_ARTWORK_BYTES];
+static watch_ble_artwork_status_t watch_ble_artwork = {
+    .pixels = watch_artwork_pixels,
+    .width = WATCH_ARTWORK_WIDTH,
+    .height = WATCH_ARTWORK_HEIGHT
+};
+static uint16_t watch_artwork_expected_bytes;
+static uint16_t watch_artwork_received_bytes;
 static ble_gatts_char_handles_t watch_link_rx_handles;
 static ble_gatts_char_handles_t watch_link_tx_handles;
 static uint16_t watch_conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -284,6 +295,41 @@ static void watch_link_apply_media_volume(const uint8_t *payload, uint16_t lengt
     ++watch_ble_media.revision;
 }
 
+static void watch_link_apply_artwork_begin(const uint8_t *payload, uint16_t length)
+{
+    if ((payload == NULL) || (length != 4u) ||
+        (payload[0] != WATCH_ARTWORK_WIDTH) ||
+        (payload[1] != WATCH_ARTWORK_HEIGHT)) return;
+    uint16_t bytes = tseho_link_read_u16_le(&payload[2]);
+    if (bytes != WATCH_ARTWORK_BYTES) return;
+    watch_artwork_expected_bytes = bytes;
+    watch_artwork_received_bytes = 0u;
+    watch_ble_artwork.valid = false;
+}
+
+static void watch_link_apply_artwork_chunk(const uint8_t *payload, uint16_t length)
+{
+    if ((payload == NULL) || (length <= 2u) ||
+        (watch_artwork_expected_bytes == 0u)) return;
+    uint16_t offset = tseho_link_read_u16_le(payload);
+    uint16_t bytes = (uint16_t)(length - 2u);
+    if (((uint32_t)offset + bytes > watch_artwork_expected_bytes) ||
+        (offset != watch_artwork_received_bytes)) return;
+    for (uint16_t i = 0u; i < bytes; ++i)
+        watch_artwork_pixels[offset + i] = payload[2u + i];
+    watch_artwork_received_bytes = (uint16_t)(watch_artwork_received_bytes + bytes);
+}
+
+static void watch_link_apply_artwork_end(const uint8_t *payload, uint16_t length)
+{
+    (void)payload;
+    if ((length != 0u) ||
+        (watch_artwork_received_bytes != watch_artwork_expected_bytes)) return;
+    watch_ble_artwork.valid = true;
+    ++watch_ble_artwork.revision;
+    watch_artwork_expected_bytes = 0u;
+}
+
 static void watch_link_handle_frame(
     const tseho_link_frame_view_t *frame,
     void *context)
@@ -303,6 +349,12 @@ static void watch_link_handle_frame(
         watch_link_apply_media_state(frame->payload, frame->payload_length);
     } else if (frame->type == TSEHO_LINK_MSG_MEDIA_VOLUME) {
         watch_link_apply_media_volume(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_MEDIA_ART_BEGIN) {
+        watch_link_apply_artwork_begin(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_MEDIA_ART_CHUNK) {
+        watch_link_apply_artwork_chunk(frame->payload, frame->payload_length);
+    } else if (frame->type == TSEHO_LINK_MSG_MEDIA_ART_END) {
+        watch_link_apply_artwork_end(frame->payload, frame->payload_length);
     }
 }
 
@@ -518,6 +570,11 @@ const watch_ble_status_t *watch_ble_get_status(void)
 const watch_ble_media_status_t *watch_ble_get_media_status(void)
 {
     return &watch_ble_media;
+}
+
+const watch_ble_artwork_status_t *watch_ble_get_artwork_status(void)
+{
+    return &watch_ble_artwork;
 }
 
 bool watch_ble_send_media_command(uint8_t command)

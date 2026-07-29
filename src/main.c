@@ -315,6 +315,17 @@ int main(void)
             if (ble_media->track[i] == '\0') break;
         }
         (void)watch_ui_set_media_status(&watch_ui_runtime, &media);
+        const watch_ble_artwork_status_t *ble_artwork =
+            watch_ble_get_artwork_status();
+        (void)watch_ui_set_artwork_status(
+            &watch_ui_runtime,
+            (watch_ui_artwork_status_t) {
+                .pixels = ble_artwork->pixels,
+                .width = ble_artwork->width,
+                .height = ble_artwork->height,
+                .revision = ble_artwork->revision,
+                .valid = ble_artwork->valid
+            });
         watch_debug_state.heartbeat++;
         time = watch_clock_get();
         watch_debug_state.clock_hour = time.hour;

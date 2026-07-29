@@ -1313,10 +1313,10 @@ static void draw_media_texts(watch_ui_t *ui, watch_time_t time)
 {
     const watch_ui_media_status_t *media = &ui->media;
     uint32_t phase = time_ticks(time) / 2u;
-    draw_media_marquee(ui->graphics, 106, 72, 96,
+    draw_media_marquee(ui->graphics, 124, 72, 78,
                        media->track[0] ? media->track : "нет трека",
                        2u, color_text(), phase);
-    draw_media_marquee(ui->graphics, 106, 103, 96,
+    draw_media_marquee(ui->graphics, 124, 103, 78,
                        media->artist[0] ? media->artist : "Gadgetbridge",
                        1u, color_muted(), phase);
 }
@@ -1334,9 +1334,22 @@ static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
     time_text[4] = (char)('0' + (seconds % 10u));
     draw_header(ui, "МУЗЫКА", true, color_text());
     gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
-    gno_fill_rect(ui->graphics, 42, 69, 52, 52, color_info());
-    watch_draw_text(ui->graphics, 56, 82,
-                    media->state == 1u ? ">" : "||", 4u, color_text());
+    if (ui->artwork.valid && ui->artwork.pixels != NULL &&
+        ui->artwork.width == 80u && ui->artwork.height == 80u) {
+        gno_bitmap_t artwork = {
+            .width = ui->artwork.width,
+            .height = ui->artwork.height,
+            .row_stride_bytes = 160u,
+            .format = GNO_PIXELFORMAT_RGB565,
+            .pixels = ui->artwork.pixels
+        };
+        (void)gno_draw_bitmap(ui->graphics, 34, 61, &artwork);
+    } else {
+        gno_fill_rect(ui->graphics, 34, 61, 80, 80, color_info());
+        watch_draw_text(ui->graphics, 61, 82,
+                        media->state == 1u ? ">" : "||", 4u,
+                        color_text());
+    }
     draw_media_texts(ui, time);
     watch_draw_text(ui->graphics, 32, 162, time_text, 1u, color_muted());
     gno_draw_rect(ui->graphics, 32, 181, 176, 6, color_line());
@@ -1818,6 +1831,18 @@ bool watch_ui_set_media_status(watch_ui_t *ui,
             ui->media.track[i] = status->track[i];
             if (status->track[i] == '\0') break;
         }
+        if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->needs_redraw = true;
+    }
+    return true;
+}
+
+bool watch_ui_set_artwork_status(watch_ui_t *ui,
+                                 watch_ui_artwork_status_t status)
+{
+    if (ui == NULL || !ui->initialized) return false;
+    if (ui->artwork.revision != status.revision ||
+        ui->artwork.valid != status.valid) {
+        ui->artwork = status;
         if (ui->screen == WATCH_UI_SCREEN_MEDIA) ui->needs_redraw = true;
     }
     return true;

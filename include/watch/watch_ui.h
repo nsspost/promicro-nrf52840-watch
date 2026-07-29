@@ -78,6 +78,14 @@ typedef struct {
 } watch_ui_media_status_t;
 
 typedef struct {
+    const uint8_t *pixels;
+    uint16_t width;
+    uint16_t height;
+    uint32_t revision;
+    bool valid;
+} watch_ui_artwork_status_t;
+
+typedef struct {
     int16_t x;
     int16_t y;
     int16_t w;
@@ -110,6 +118,7 @@ typedef struct {
     uint8_t critical_demo_outcome;
     watch_ui_phone_status_t phone;
     watch_ui_media_status_t media;
+    watch_ui_artwork_status_t artwork;
     uint8_t media_command;
     bool media_command_pending;
     uint32_t phase_started_at;
@@ -133,6 +142,8 @@ bool watch_ui_set_phone_status(watch_ui_t *ui,
                                watch_ui_phone_status_t status);
 bool watch_ui_set_media_status(watch_ui_t *ui,
                                const watch_ui_media_status_t *status);
+bool watch_ui_set_artwork_status(watch_ui_t *ui,
+                                 watch_ui_artwork_status_t status);
 bool watch_ui_take_media_command(watch_ui_t *ui, uint8_t *command);
 
 /*

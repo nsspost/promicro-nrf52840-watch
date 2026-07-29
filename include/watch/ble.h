@@ -40,10 +40,19 @@ typedef struct {
     uint32_t revision;
 } watch_ble_media_status_t;
 
+typedef struct {
+    const uint8_t *pixels;
+    uint16_t width;
+    uint16_t height;
+    uint32_t revision;
+    bool valid;
+} watch_ble_artwork_status_t;
+
 bool watch_ble_init(void);
 void watch_ble_poll(void);
 const watch_ble_status_t *watch_ble_get_status(void);
 const watch_ble_media_status_t *watch_ble_get_media_status(void);
+const watch_ble_artwork_status_t *watch_ble_get_artwork_status(void);
 bool watch_ble_send_media_command(uint8_t command);
 
 #endif
