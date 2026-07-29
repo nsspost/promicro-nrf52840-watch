@@ -15,6 +15,21 @@ enum {
     TICKS_PER_DAY = 24 * 60 * 60 * WATCH_CLOCK_SUBSECOND_HZ
 };
 
+enum {
+    MEDIA_TEXT_WIDTH = 78,
+    MEDIA_TEXT_HEIGHT = 22,
+    MEDIA_TEXT_MASK_BYTES =
+        ((MEDIA_TEXT_WIDTH * MEDIA_TEXT_HEIGHT + 7) / 8)
+};
+
+typedef struct {
+    uint8_t pixels[MEDIA_TEXT_MASK_BYTES];
+    bool valid;
+} media_text_lane_t;
+
+static media_text_lane_t media_track_lane;
+static media_text_lane_t media_artist_lane;
+
 typedef enum {
     ACTION_NONE = 0,
     ACTION_BACK,
@@ -1286,39 +1301,76 @@ static void draw_diagnostic(watch_ui_t *ui, watch_time_t time)
                 ACTION_BACK, 0u, false);
 }
 
-static void draw_media_marquee(gno_context_t *graphics,
-                               int x, int y, int width,
-                               const char *text, uint8_t scale,
-                               gno_color_t color, uint32_t phase)
+static bool media_mask_get(const uint8_t *mask, uint16_t index)
 {
-    int text_width = skin_text_width(text, scale);
-    gno_fill_rect(graphics, x, y, width, 22, color_background());
-    if (text_width <= width) {
-        watch_draw_text(graphics, x, y, text, scale, color);
-        return;
+    return (mask[index >> 3] & (uint8_t)(1u << (index & 7u))) != 0u;
+}
+
+static void draw_media_delta_text(gno_context_t *graphics,
+                                  media_text_lane_t *lane,
+                                  int x, int y, const char *text,
+                                  uint8_t scale, gno_color_t color,
+                                  uint32_t phase)
+{
+    uint8_t next[MEDIA_TEXT_MASK_BYTES];
+    int text_width = watch_text_width(text, scale);
+    int text_x = 0;
+    if (text_width > MEDIA_TEXT_WIDTH) {
+        int cycle = text_width + 20;
+        text_x = -(int)((phase * 2u) % (uint32_t)cycle);
+    }
+    (void)watch_text_rasterize_mask(next, sizeof(next),
+                                    MEDIA_TEXT_WIDTH, MEDIA_TEXT_HEIGHT,
+                                    text_x, 0, text, scale);
+    if (text_width > MEDIA_TEXT_WIDTH) {
+        (void)watch_text_rasterize_mask_add(next, sizeof(next),
+                                            MEDIA_TEXT_WIDTH, MEDIA_TEXT_HEIGHT,
+                                            text_x + text_width + 20, 0,
+                                            text, scale);
     }
 
-    int cycle = text_width + 20;
-    int offset = (int)((phase * 2u) % (uint32_t)cycle);
-    if (gno_push_clip(graphics,
-                      (gno_rect_t) { x, y, width, 22 })) {
-        watch_draw_text(graphics, x - offset, y, text, scale, color);
-        watch_draw_text(graphics, x - offset + cycle, y,
-                        text, scale, color);
-        (void)gno_pop_state(graphics);
+    for (uint16_t row = 0u; row < MEDIA_TEXT_HEIGHT; ++row) {
+        uint16_t column = 0u;
+        while (column < MEDIA_TEXT_WIDTH) {
+            uint16_t index = (uint16_t)(row * MEDIA_TEXT_WIDTH + column);
+            bool old_pixel = lane->valid && media_mask_get(lane->pixels, index);
+            bool new_pixel = media_mask_get(next, index);
+            if (old_pixel == new_pixel) {
+                ++column;
+                continue;
+            }
+            uint16_t start = column;
+            while (column < MEDIA_TEXT_WIDTH) {
+                index = (uint16_t)(row * MEDIA_TEXT_WIDTH + column);
+                old_pixel = lane->valid && media_mask_get(lane->pixels, index);
+                new_pixel = media_mask_get(next, index);
+                if ((old_pixel == new_pixel) ||
+                    (new_pixel != media_mask_get(next,
+                        (uint16_t)(row * MEDIA_TEXT_WIDTH + start)))) break;
+                ++column;
+            }
+            bool foreground = media_mask_get(next,
+                (uint16_t)(row * MEDIA_TEXT_WIDTH + start));
+            gno_fill_rect(graphics, x + start, y + row,
+                          column - start, 1,
+                          foreground ? color : color_background());
+        }
     }
+    for (uint16_t i = 0u; i < MEDIA_TEXT_MASK_BYTES; ++i)
+        lane->pixels[i] = next[i];
+    lane->valid = true;
 }
 
 static void draw_media_texts(watch_ui_t *ui, watch_time_t time)
 {
     const watch_ui_media_status_t *media = &ui->media;
     uint32_t phase = time_ticks(time) / 2u;
-    draw_media_marquee(ui->graphics, 124, 72, 78,
-                       media->track[0] ? media->track : "нет трека",
-                       2u, color_text(), phase);
-    draw_media_marquee(ui->graphics, 124, 103, 78,
-                       media->artist[0] ? media->artist : "Gadgetbridge",
-                       1u, color_muted(), phase);
+    draw_media_delta_text(ui->graphics, &media_track_lane, 124, 72,
+                          media->track[0] ? media->track : "нет трека",
+                          2u, color_text(), phase);
+    draw_media_delta_text(ui->graphics, &media_artist_lane, 124, 103,
+                          media->artist[0] ? media->artist : "Gadgetbridge",
+                          1u, color_muted(), phase);
 }
 
 static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
@@ -1332,6 +1384,8 @@ static void draw_media_screen(watch_ui_t *ui, watch_time_t time)
     time_text[1] = (char)('0' + (minutes % 10u));
     time_text[3] = (char)('0' + (seconds / 10u));
     time_text[4] = (char)('0' + (seconds % 10u));
+    media_track_lane.valid = false;
+    media_artist_lane.valid = false;
     draw_header(ui, "МУЗЫКА", true, color_text());
     gno_draw_rect(ui->graphics, 28, 55, 184, 92, color_line());
     if (ui->artwork.valid && ui->artwork.pixels != NULL &&

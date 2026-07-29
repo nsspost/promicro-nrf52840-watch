@@ -2,6 +2,11 @@
 
 #include <stddef.h>
 
+static void mask_set(uint8_t *bits, uint32_t index)
+{
+    bits[index >> 3] |= (uint8_t)(1u << (index & 7u));
+}
+
 #define GLYPH(a, b, c, d, e) \
     (uint16_t)(((a) << 12) | ((b) << 9) | ((c) << 6) | ((d) << 3) | (e))
 
@@ -171,5 +176,60 @@ int watch_text_width(const char *text, uint8_t scale)
         ++characters;
     }
     return (characters > 0) ? ((characters * 4 - 1) * scale) : 0;
+}
+
+static bool watch_text_rasterize_mask_impl(uint8_t *bits, size_t bits_size,
+                                            uint16_t width, uint16_t height,
+                                            int x, int y, const char *text,
+                                            uint8_t scale, bool clear)
+{
+    size_t required = ((size_t)width * height + 7u) / 8u;
+    if ((bits == NULL) || (text == NULL) || (scale == 0u) ||
+        (bits_size < required)) return false;
+    if (clear) {
+        for (size_t i = 0u; i < required; ++i) bits[i] = 0u;
+    }
+
+    int pen_x = x;
+    while (*text != '\0') {
+        uint16_t pattern = glyph_pattern(next_codepoint(&text));
+        for (int row = 0; row < 5; ++row) {
+            uint8_t row_bits = (uint8_t)((pattern >> ((4 - row) * 3)) & 7u);
+            for (int column = 0; column < 3; ++column) {
+                if ((row_bits & (uint8_t)(4u >> column)) == 0u) continue;
+                for (uint8_t dy = 0u; dy < scale; ++dy) {
+                    int target_y = y + (row * scale) + dy;
+                    if ((target_y < 0) || (target_y >= height)) continue;
+                    for (uint8_t dx = 0u; dx < scale; ++dx) {
+                        int target_x = pen_x + (column * scale) + dx;
+                        if ((target_x >= 0) && (target_x < width)) {
+                            mask_set(bits, (uint32_t)target_y * width +
+                                     (uint32_t)target_x);
+                        }
+                    }
+                }
+            }
+        }
+        pen_x += 4 * scale;
+    }
+    return true;
+}
+
+bool watch_text_rasterize_mask(uint8_t *bits, size_t bits_size,
+                               uint16_t width, uint16_t height,
+                               int x, int y, const char *text,
+                               uint8_t scale)
+{
+    return watch_text_rasterize_mask_impl(bits, bits_size, width, height,
+                                          x, y, text, scale, true);
+}
+
+bool watch_text_rasterize_mask_add(uint8_t *bits, size_t bits_size,
+                                   uint16_t width, uint16_t height,
+                                   int x, int y, const char *text,
+                                   uint8_t scale)
+{
+    return watch_text_rasterize_mask_impl(bits, bits_size, width, height,
+                                          x, y, text, scale, false);
 }
 
