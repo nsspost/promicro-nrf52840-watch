@@ -1362,10 +1362,11 @@ static void media_rasterize_text(uint8_t *mask, size_t mask_bytes,
 static void media_build_text_mask(uint8_t *mask, size_t mask_bytes,
                                   uint16_t width, uint16_t height,
                                   const char *text, uint8_t scale,
-                                  uint32_t phase)
+                                  uint32_t phase, bool center_when_fit)
 {
     int text_width = skin_text_width(text, scale);
-    int text_x = 0;
+    int text_x = (center_when_fit && text_width <= width) ?
+                 ((int)width - text_width) / 2 : 0;
     if (text_width > width) {
         int cycle = text_width + 20;
         text_x = -(int)((phase * 2u) % (uint32_t)cycle);
@@ -1386,21 +1387,24 @@ static void draw_media_delta_text(gno_context_t *graphics,
                                   const char *current_text,
                                   uint8_t scale, gno_color_t color,
                                   uint32_t previous_phase,
-                                  uint32_t current_phase)
+                                  uint32_t current_phase,
+                                  bool center_when_fit)
 {
     size_t mask_bytes = ((size_t)width * height + 7u) / 8u;
     uint8_t previous[MEDIA_MASK_MAX_BYTES];
     uint8_t current[MEDIA_MASK_MAX_BYTES];
     if (previous_text != NULL) {
         media_build_text_mask(previous, mask_bytes, width, height,
-                              previous_text, scale, previous_phase);
+                              previous_text, scale, previous_phase,
+                              center_when_fit);
     } else {
         for (size_t i = 0u; i < mask_bytes; ++i) {
             previous[i] = 0u;
         }
     }
     media_build_text_mask(current, mask_bytes, width, height,
-                          current_text, scale, current_phase);
+                          current_text, scale, current_phase,
+                          center_when_fit);
 
     for (uint16_t row = 0u; row < height; ++row) {
         uint16_t column = 0u;
@@ -1460,13 +1464,15 @@ static void draw_media_texts_transition(watch_ui_t *ui,
                           previous_track == NULL ? NULL :
                           media_text_or(previous_track, "нет трека"),
                           media_text_or(current_track, "нет трека"),
-                          2u, color_text(), previous_phase, current_phase);
+                          2u, color_text(), previous_phase, current_phase,
+                          false);
     draw_media_delta_text(ui->graphics, 124, 103,
                           MEDIA_TEXT_WIDTH, MEDIA_TEXT_HEIGHT,
                           previous_artist == NULL ? NULL :
                           media_text_or(previous_artist, "Gadgetbridge"),
                           media_text_or(current_artist, "Gadgetbridge"),
-                          2u, color_muted(), previous_phase, current_phase);
+                          2u, color_muted(), previous_phase, current_phase,
+                          false);
 }
 
 static void draw_media_app_title_transition(watch_ui_t *ui,
@@ -1480,7 +1486,8 @@ static void draw_media_app_title_transition(watch_ui_t *ui,
                           previous_app == NULL ? NULL :
                           media_text_or(previous_app, "МУЗЫКА"),
                           media_text_or(current_app, "МУЗЫКА"),
-                          2u, color_text(), previous_phase, current_phase);
+                          2u, color_text(), previous_phase, current_phase,
+                          true);
 }
 
 static void fill_disc(gno_context_t *graphics, int center_x, int center_y,
