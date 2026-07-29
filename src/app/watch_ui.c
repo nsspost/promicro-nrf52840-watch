@@ -592,22 +592,22 @@ static void draw_strict_home_weather_placeholder(watch_ui_t *ui)
 static void draw_strict_home_phone_status(watch_ui_t *ui)
 {
     gno_context_t *graphics = ui->graphics;
-    gno_fill_rect(graphics, 110, 1, 20, 13, color_background());
+    gno_fill_rect(graphics, 110, 1, 20, 25, color_background());
     gno_color_t link_color = phone_state_online(ui->phone.state) ?
                              color_text() : color_muted();
-    gno_draw_rect(graphics, 112, 2, 16, 11, link_color);
-    gno_draw_line(graphics, 120, 3, 124, 6, link_color);
-    gno_draw_line(graphics, 124, 6, 116, 9, link_color);
-    gno_draw_line(graphics, 116, 9, 124, 11, link_color);
-    gno_draw_line(graphics, 124, 11, 120, 12, link_color);
-    gno_draw_vline(graphics, 120, 3, 10, link_color);
+    gno_draw_rect(graphics, 112, 2, 16, 22, link_color);
+    gno_draw_line(graphics, 120, 3, 124, 8, link_color);
+    gno_draw_line(graphics, 124, 8, 116, 14, link_color);
+    gno_draw_line(graphics, 116, 14, 124, 20, link_color);
+    gno_draw_line(graphics, 124, 20, 120, 23, link_color);
+    gno_draw_vline(graphics, 120, 3, 21, link_color);
     if (ui->phone.state == WATCH_UI_PHONE_READY) {
-        gno_fill_rect(graphics, 114, 3, 12, 9, color_surface_high());
-        gno_draw_line(graphics, 120, 3, 124, 6, color_text());
-        gno_draw_line(graphics, 124, 6, 116, 9, color_text());
-        gno_draw_line(graphics, 116, 9, 124, 11, color_text());
-        gno_draw_line(graphics, 124, 11, 120, 12, color_text());
-        gno_draw_vline(graphics, 120, 3, 10, color_text());
+        gno_fill_rect(graphics, 114, 3, 12, 20, color_surface_high());
+        gno_draw_line(graphics, 120, 3, 124, 8, color_text());
+        gno_draw_line(graphics, 124, 8, 116, 14, color_text());
+        gno_draw_line(graphics, 116, 14, 124, 20, color_text());
+        gno_draw_line(graphics, 124, 20, 120, 23, color_text());
+        gno_draw_vline(graphics, 120, 3, 21, color_text());
     }
 }
 
