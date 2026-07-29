@@ -44,7 +44,9 @@ typedef enum {
     ACTION_OPEN_MEDIA,
     ACTION_MEDIA_PREVIOUS,
     ACTION_MEDIA_PLAY_PAUSE,
-    ACTION_MEDIA_NEXT
+    ACTION_MEDIA_NEXT,
+    ACTION_MEDIA_VOLUME_DOWN,
+    ACTION_MEDIA_VOLUME_UP
 } ui_action_t;
 
 static watch_ui_skin_t active_skin = WATCH_UI_SKIN_STRICT_CONTEXT;
@@ -1718,9 +1720,10 @@ static void dispatch_action(watch_ui_t *ui,
         case ACTION_MEDIA_PREVIOUS:
         case ACTION_MEDIA_PLAY_PAUSE:
         case ACTION_MEDIA_NEXT:
+        case ACTION_MEDIA_VOLUME_DOWN:
+        case ACTION_MEDIA_VOLUME_UP:
             ui->media_command = (uint8_t)argument;
             ui->media_command_pending = true;
-            ui->needs_redraw = true;
             break;
         case ACTION_TOGGLE_SKIN:
             ui->skin =
@@ -1951,6 +1954,13 @@ bool watch_ui_process_touch(watch_ui_t *ui,
                 navigate_back(ui);
                 consumed_swipe = true;
             }
+        } else if (vertical >= 48 && vertical > horizontal &&
+                   ui->screen == WATCH_UI_SCREEN_MEDIA) {
+            dispatch_action(ui,
+                            delta_y < 0 ? ACTION_MEDIA_VOLUME_UP :
+                                          ACTION_MEDIA_VOLUME_DOWN,
+                            delta_y < 0 ? 6u : 5u, time);
+            consumed_swipe = true;
         }
         if (!consumed_swipe && ui->pressed_hit >= 0) {
             watch_ui_hit_target_t target =
